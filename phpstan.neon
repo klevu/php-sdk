@@ -1,0 +1,33 @@
+parameters:
+    level: 9
+    paths:
+        - src
+        - tests
+    ignoreErrors:
+        -
+            message: '#Parameter .* of static method .*EventType::from\(\) expects .*, mixed given#'
+            path: src/Model/Analytics/Collect/EventFactory.php
+        -
+            message: '#Parameter .* of class .*UserProfile constructor expects .*, mixed given#'
+            path: src/Model/Analytics/Collect/UserProfileFactory.php
+        -
+            message: '#Parameter .* of class .*Attribute constructor expects .*, mixed given#'
+            path: src/Model/Indexing/AttributeFactory.php
+        -
+            message: '#Readonly property .* is assigned outside of its declaring class#'
+            path: tests/Unit/Model/Account/AccountFeaturesTest.php
+        -
+            message: '#Parameter .* of class .*Record constructor expects .*, mixed given#'
+            path: src/Model/Indexing/RecordFactory.php
+        -
+            message: '#Readonly property .* is assigned outside of its declaring class#'
+            path: tests/Unit/Model/ApiResponseTest.php
+        -
+            message: '#Readonly property .* is assigned outside of its declaring class#'
+            path: tests/Unit/Model/AccountCredentialsTest.php
+        -
+            message: '/Parameter #1 \$errors of class .*ValidationException constructor expects array<string>, array given./'
+            path: tests/Unit/Exception/ValidationExceptionTest.php
+        -
+            message: '/Parameter #1 \$data of method .*AccountFeaturesFactory::create\(\) expects array<.*bool>, array given./'
+            path: tests/Unit/Model/Account/AccountFeaturesFactoryTest.php
