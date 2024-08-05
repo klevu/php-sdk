@@ -8,6 +8,9 @@ declare(strict_types=1);
 
 namespace Klevu\PhpSDK\Exception\Api;
 
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
+use Klevu\PhpSDK\Exception\ApiExceptionTrait;
+
 /**
  * Exception thrown when an API request is rejected by the receiver.
  *
@@ -15,8 +18,10 @@ namespace Klevu\PhpSDK\Exception\Api;
  *
  * @since 1.0.0
  */
-class BadRequestException extends \LogicException
+class BadRequestException extends \LogicException implements ApiExceptionInterface
 {
+    use ApiExceptionTrait;
+
     /**
      * @var string[]
      */
@@ -26,12 +31,18 @@ class BadRequestException extends \LogicException
      * @param string $message
      * @param int $code
      * @param string[] $errors
+     * @param string|null $apiCode
+     * @param string|null $path
+     * @param string[]|null $debug
      * @param \Throwable|null $previous
      */
     public function __construct(
         string $message,
         int $code,
         array $errors = [],
+        ?string $apiCode = null,
+        ?string $path = null,
+        ?array $debug = null,
         ?\Throwable $previous = null,
     ) {
         parent::__construct($message, $code, $previous);
@@ -41,6 +52,10 @@ class BadRequestException extends \LogicException
         //  which they aren't by default in the response
         natcasesort($errors);
         $this->errors = array_values($errors);
+
+        $this->setApiCode($apiCode);
+        $this->setPath($path);
+        $this->setDebug($debug);
     }
 
     /**

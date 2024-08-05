@@ -1,0 +1,20 @@
+[
+    {
+        "id": "123-456",
+        "type": "KLEVU_PRODUCT",
+        "attributes": {
+            "name": {
+                "default": "Test Product"
+            },
+            "sku": "TEST_PRODUCT",
+            "prices": [
+                {
+                    "amount": 100.0,
+                    "currency": "GBP",
+                    "type": "defaultPrice"
+                }
+            ],
+            "url": "https://php-sdk-poc.davidg.test/test-product"
+        }
+    }
+]

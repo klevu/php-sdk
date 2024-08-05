@@ -14,12 +14,16 @@ use Klevu\PhpSDK\Api\Model\Indexing\RecordInterface;
 use Klevu\PhpSDK\Api\Service\Indexing\BatchServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\ApiResponse;
 use Klevu\PhpSDK\Model\Indexing\AuthAlgorithms;
 use Klevu\PhpSDK\Model\Indexing\Record;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateFactory;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
+use Klevu\PhpSDK\Model\IteratorInterface;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\ComposableUserAgentProviderInterface;
 use Klevu\PhpSDK\Provider\Indexing\IndexingVersions;
@@ -244,13 +248,100 @@ class BatchServiceTest extends TestCase
                     'visibility' => 'catalog-search',
                     'additionalProp1' => 'string',
                 ],
-                display: [
+                channels: [
                     'additionalProp1' => [],
                     'additionalProp2' => [],
                     'additionalProp3' => [],
                 ],
             ),
         ]);
+    }
+
+    /**
+     * @return array<string, UpdateIterator|string>
+     */
+    public static function getValidUpdateFixtures(): array
+    {
+        $updateFactory = new UpdateFactory();
+
+        return [
+            'records' => new UpdateIterator([
+                $updateFactory->create([
+                    'record_id' => 'PRODUCT001',
+                    'op' => 'replace',
+                    'path' => '/attributes/name/default',
+                    'value' => 'New Name',
+                ]),
+                $updateFactory->create([
+                    'record_id' => 'PRODUCT002',
+                    'op' => 'replace',
+                    'path' => '/attributes/price',
+                    'value' => [
+                        'USD' => [
+                            'defaultPrice' => 99.99,
+                            'salePrice' => 98.99,
+                        ],
+                        'EUR' => [
+                            'defaultPrice' => 109.99,
+                            'salePrice' => 108.99,
+                        ],
+                    ],
+                ]),
+                $updateFactory->create([
+                    'record_id' => 'PRODUCT002',
+                    'op' => 'add',
+                    'path' => '/attributes/price/CAD',
+                    'value' => [
+                        'defaultPrice' => 139.99,
+                        'salePrice' => 137.99,
+                    ],
+                ]),
+                $updateFactory->create([
+                    'record_id' => 'PRODUCT001',
+                    'op' => 'replace',
+                    'path' => '/attributes/description/default',
+                    'value' => 'New description',
+                ]),
+            ]),
+            'expectedPayload' => json_encode([
+                'PRODUCT001' => [
+                    [
+                        'op' => 'replace',
+                        'path' => '/attributes/name/default',
+                        'value' => 'New Name',
+                    ],
+                    [
+                        'op' => 'replace',
+                        'path' => '/attributes/description/default',
+                        'value' => 'New description',
+                    ],
+                ],
+                'PRODUCT002' => [
+                    [
+                        'op' => 'replace',
+                        'path' => '/attributes/price',
+                        'value' => [
+                            'USD' => [
+                                'defaultPrice' => 99.99,
+                                'salePrice' => 98.99,
+                            ],
+                            'EUR' => [
+                                'defaultPrice' => 109.99,
+                                'salePrice' => 108.99,
+                            ],
+                        ],
+                    ],
+                    [
+                        'op' => 'add',
+                        'path' => '/attributes/price/CAD',
+                        'value' => [
+                            'defaultPrice' => 139.99,
+                            'salePrice' => 137.99,
+                        ],
+                    ],
+                ],
+            ]) ?: '',
+        ];
     }
 
     /**
@@ -415,6 +506,111 @@ class BatchServiceTest extends TestCase
         );
 
         $sendResponse = $batchService->send(
+            accountCredentials: $accountCredentials,
+            records: $records,
+        );
+
+        $this->assertEquals(
+            expected: $expectedResult,
+            actual: $sendResponse,
+        );
+    }
+
+    #[Test]
+    #[DataProvider('dataProvider_testSend_Success')]
+    public function testPut_Success(
+        RecordIterator $records,
+        string $apiResponse,
+        ApiResponse $expectedResult,
+    ): void {
+        $mockResponse = $this->getMockResponse(
+            statusCode: 200,
+            bodyContents: $apiResponse,
+        );
+
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->once())
+            ->method('sendRequest')
+            ->with($this->callback(function (RequestInterface $request) use ($records): bool {
+                $this->assertSame('PUT', $request->getMethod());
+                $this->assertSame(
+                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    actual: (string)$request->getUri(),
+                );
+
+                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
+
+                $userAgentHeaders = $request->getHeader('User-Agent');
+                $this->assertIsArray($userAgentHeaders);
+                $this->assertCount(1, $userAgentHeaders);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    string: $userAgentHeaders[0],
+                );
+
+                $this->assertSame(
+                    expected: ['klevu-1234567890'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_APIKEY),
+                );
+                $this->assertSame(
+                    expected: ['HmacSHA384'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_AUTH_ALGO),
+                );
+
+                $timestampHeader = $request->getHeader(ApiServiceInterface::API_HEADER_KEY_TIMESTAMP);
+                $this->assertIsArray($timestampHeader);
+                $this->assertCount(1, $timestampHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/',
+                    string: $timestampHeader[0],
+                );
+                $timestampUnixtime = strtotime($timestampHeader[0]);
+                $this->assertGreaterThan(
+                    expected: time() - 3600,
+                    actual: $timestampUnixtime,
+                );
+                $this->assertLessThan(
+                    expected: time() + 60,
+                    actual: $timestampUnixtime,
+                );
+
+                $authorizationHeader = $request->getHeader('Authorization');
+                $this->assertIsArray($authorizationHeader);
+                $this->assertCount(1, $authorizationHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^Bearer [-A-Za-z0-9+/]*={0,3}$#',
+                    string: $authorizationHeader[0],
+                );
+
+                $requestBody = $request->getBody();
+                $requestBodyContents = $requestBody->getContents();
+                $requestBody->rewind();
+
+                $this->assertSame(
+                    expected: json_encode(
+                        array_map(
+                            static fn (RecordInterface $record): array => array_filter($record->toArray()),
+                            $records->toArray(),
+                        ),
+                    ),
+                    actual: $requestBodyContents,
+                );
+
+                return true;
+            }))
+            ->willReturn($mockResponse);
+
+        $batchService = new BatchService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $sendResponse = $batchService->put(
             accountCredentials: $accountCredentials,
             records: $records,
         );
@@ -753,6 +949,11 @@ class BatchServiceTest extends TestCase
     {
         $records = self::getValidRecordFixtures();
         $validRecord = $records->current();
+        if (null === $validRecord) {
+            throw new \LogicException(
+                'Error retrieving current valid record from fixtures',
+            );
+        }
 
         return [
             [
@@ -766,7 +967,7 @@ class BatchServiceTest extends TestCase
                         type: $record->getType(),
                         relations: $record->getRelations(),
                         attributes: $record->getAttributes(),
-                        display: $record->getDisplay(),
+                        channels: $record->getChannels(),
                     );
                 }),
                 null,
@@ -782,7 +983,7 @@ class BatchServiceTest extends TestCase
                         type: $record->getType(),
                         relations: $record->getRelations(),
                         attributes: $record->getAttributes(),
-                        display: $record->getDisplay(),
+                        channels: $record->getChannels(),
                     );
                 }),
                 1,
@@ -820,6 +1021,215 @@ class BatchServiceTest extends TestCase
             accountCredentials: $accountCredentials,
             records: $records,
         );
+    }
+
+    /**
+     * @return mixed[][]
+     */
+    public static function dataProvider_testSend_FailValidation(): array
+    {
+        // phpcs:disable Generic.Files.LineLength.TooLong
+        return [
+            // Attributes
+            [
+                new RecordIterator([
+                    new Record(
+                        id: '42',
+                        type: 'KLEVU_PRODUCT',
+                        attributes: [
+                            ' ' => [],
+                            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' => [],
+                        ],
+                    ),
+                    new Record(
+                        id: '123',
+                        type: 'KLEVU_PRODUCT',
+                        attributes: [
+                            '_foo_' => [],
+                        ],
+                    ),
+                    new Record(
+                        id: '999',
+                        type: 'KLEVU_PRODUCT',
+                        attributes: [
+                            'テスト属性' => [],
+                        ],
+                    ),
+                ]),
+                [
+                    'Record #0: attributes: [ ] Attribute Name is required',
+                    'Record #0: attributes: [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] Attribute Name must be less than or equal to 200 characters',
+                    'Record #1: attributes: [_foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore',
+                    'Record #2: attributes: [テスト属性] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore',
+                ],
+            ],
+            // Groups
+            [
+                new RecordIterator([
+                    new Record(
+                        id: '42',
+                        type: 'KLEVU_PRODUCT',
+                        groups: [
+                            '' => [],
+                        ],
+                    ),
+                    new Record(
+                        id: '123',
+                        type: 'KLEVU_PRODUCT',
+                        groups: [
+                            'group1' => [
+                                'attributes' => [
+                                    ' ' => [],
+                                    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' => [],
+                                ],
+                            ],
+                            'परीक्षणसमूह' => [
+                                'attributes' => [
+                                    '_foo_' => [],
+                                    'product-name' => [],
+                                ],
+                            ],
+                        ],
+                    ),
+                ]),
+                [
+                    'Record #0: groups: [] Group Name is required',
+                    'Record #1: groups: [group1] '
+                        . '[ ] Attribute Name is required; '
+                        . '[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] Attribute Name must be less than or equal to 200 characters',
+                    'Record #1: groups: [परीक्षणसमूह] '
+                        . 'Group Name must be alphanumeric, and can include underscores (_); '
+                        . '[_foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[product-name] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore',
+                ],
+            ],
+            // Channels
+            [
+                new RecordIterator([
+                    new Record(
+                        id: '42',
+                        type: 'KLEVU_PRODUCT',
+                        channels: [
+                            '' => [],
+                            'channel1' => [
+                                'attributes' => [
+                                    ' ' => [],
+                                    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' => [],
+                                ],
+                            ],
+                        ],
+                    ),
+                    new Record(
+                        id: '123',
+                        type: 'KLEVU_PRODUCT',
+                        channels: [
+                            '테스트채널' => [
+                                'groups' => [
+                                    '' => [],
+                                    'group1' => [
+                                        'attributes' => [
+                                            ' ' => [],
+                                            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' => [],
+                                        ],
+                                    ],
+                                    'परीक्षणसमूह' => [
+                                        'attributes' => [
+                                            '_foo_' => [],
+                                            'product-name' => [],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ),
+                ]),
+                [
+                    'Record #0: channels: [] Channel Name is required',
+                    'Record #0: channels: [channel1] '
+                        . '[ ] Attribute Name is required; '
+                        . '[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] Attribute Name must be less than or equal to 200 characters',
+                    'Record #1: channels: [테스트채널] Channel Name must be alphanumeric, and can include underscores (_); '
+                        . '[] Group Name is required; '
+                        . '[group1] [ ] Attribute Name is required; '
+                            . '[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] Attribute Name must be less than or equal to 200 characters; '
+                        . '[परीक्षणसमूह] Group Name must be alphanumeric, and can include underscores (_); '
+                            . '[_foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                            . '[product-name] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore',
+                ],
+            ],
+            // phpcs:enable Generic.Files.LineLength.TooLong
+        ];
+    }
+
+    /**
+     * @param RecordIterator $records
+     * @param string[] $expectedErrors
+     *
+     * @return void
+     * @throws ApiExceptionInterface
+     */
+    #[Test]
+    #[DataProvider('dataProvider_testSend_FailValidation')]
+    public function testSend_FailValidation(
+        RecordIterator $records,
+        array $expectedErrors,
+    ): void {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $mockLogger = $this->getMockLogger();
+        $mockLogger->expects($this->once())
+            ->method('warning')
+            ->with(
+                $this->callback(function (string $message): bool {
+                    $this->assertMatchesRegularExpression(
+                        pattern: '/^\d records were found invalid and excluded from sync$/',
+                        string: $message,
+                    );
+
+                    return true;
+                }),
+                $this->callback(function (mixed $context) use ($expectedErrors): bool {
+                    $this->assertIsArray($context);
+                    $this->assertArrayHasKey('errors', $context);
+                    $this->assertSame(
+                        expected: $expectedErrors,
+                        actual: $context['errors'],
+                    );
+
+                    return true;
+                }),
+            );
+
+        $batchService = new BatchService(
+            httpClient: $mockHttpClient,
+            logger: $mockLogger,
+            invalidRecordMode: InvalidRecordMode::SKIP,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('No valid records found to send');
+        try {
+            $batchService->send(
+                accountCredentials: $accountCredentials,
+                records: $records,
+            );
+        } catch (ValidationException $exception) {
+            $errors = $exception->getErrors();
+            $this->assertCount(1, $errors);
+            $this->assertSame(
+                expected: 'All records failed validation',
+                actual: $errors[0],
+            );
+
+            throw $exception;
+        }
     }
 
     #[Test]
@@ -1091,19 +1501,26 @@ class BatchServiceTest extends TestCase
     }
 
     #[Test]
-    #[TestWith([400])]
-    #[TestWith([401])]
-    #[TestWith([403])]
-    #[TestWith([404])]
-    #[TestWith([405])]
+    #[TestWith([400, null, 'API request rejected by Klevu API [400]'])]
+    #[TestWith([401, null, 'API request rejected by Klevu API [401]'])]
+    #[TestWith([403, null, 'API request rejected by Klevu API [403]'])]
+    #[TestWith([404, null, 'API request rejected by Klevu API [404]'])]
+    #[TestWith([405, null, 'API request rejected by Klevu API [405]'])]
+    #[TestWith([400, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([401, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([403, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([404, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([405, 'Invalid Payload request', 'Invalid Payload request'])]
     public function testSend_BadRequest(
         int $statusCode,
+        ?string $message,
+        string $expectedExceptionMessage,
     ): void {
         $mockResponse = $this->getMockResponse(
             statusCode: $statusCode,
             bodyContents: (string)json_encode([
-                'status' => 'BAD_REQUEST',
-                'message' => 'Invalid Payload request',
+                'code' => 'BAD_REQUEST',
+                'message' => $message,
                 'errors' => [
                     'save.items[0]: Exception while validating field : url',
                     'save.items[0]: Exception while validating field : prices',
@@ -1126,25 +1543,27 @@ class BatchServiceTest extends TestCase
         );
 
         $this->expectException(BadRequestException::class);
-        $this->expectExceptionMessage(
-            sprintf(
-                'API request rejected by Klevu API [%d] Invalid Payload request',
-                $statusCode,
-            ),
-        );
+        $this->expectExceptionMessage($expectedExceptionMessage);
         try {
             $batchService->send(
                 accountCredentials: $accountCredentials,
                 records: self::getValidRecordFixtures(),
             );
         } catch (BadRequestException $exception) {
+            $expectedErrors = [];
+            if ($message) {
+                $expectedErrors[] = $message;
+            }
+            $expectedErrors[] = 'save.items[0]: Exception while validating field : prices';
+            $expectedErrors[] = 'save.items[0]: Exception while validating field : url';
+
             $this->assertSame(
-                expected: [
-                    'Invalid Payload request',
-                    'save.items[0]: Exception while validating field : prices',
-                    'save.items[0]: Exception while validating field : url',
-                ],
+                expected: $expectedErrors,
                 actual: $exception->getErrors(),
+            );
+            $this->assertSame(
+                expected: 'BAD_REQUEST',
+                actual: $exception->getApiCode(),
             );
 
             throw $exception;
@@ -1164,7 +1583,7 @@ class BatchServiceTest extends TestCase
         $mockResponse = $this->getMockResponse(
             statusCode: $statusCode,
             bodyContents: (string)json_encode([
-                'status' => 'BAD_REQUEST',
+                'code' => 'BAD_REQUEST',
             ]),
         );
 
@@ -1185,7 +1604,7 @@ class BatchServiceTest extends TestCase
         $this->expectException(BadResponseException::class);
         $this->expectExceptionMessage(
             sprintf(
-                'API request rejected by Klevu API [%d] ',
+                'Unexpected Response Code [%d]',
                 $statusCode,
             ),
         );
@@ -1198,6 +1617,10 @@ class BatchServiceTest extends TestCase
             $this->assertSame(
                 expected: [],
                 actual: $exception->getErrors(),
+            );
+            $this->assertSame(
+                expected: 'BAD_REQUEST',
+                actual: $exception->getApiCode(),
             );
 
             throw $exception;
@@ -1245,6 +1668,282 @@ class BatchServiceTest extends TestCase
 
             throw $exception;
         }
+    }
+
+    /**
+     * @return mixed[][]
+     */
+    public static function dataProvider_testSend_Patch_Success(): array
+    {
+        $updates = self::getValidUpdateFixtures();
+
+        return [
+            [
+                $updates['records'],
+                $updates['expectedPayload'],
+                json_encode([
+                    'jobId' => '1234567890',
+                ]),
+                new ApiResponse(
+                    responseCode: 200,
+                    message: '',
+                    status: null,
+                    jobId: '1234567890',
+                    errors: null,
+                ),
+            ],
+            [
+                $updates['records'],
+                $updates['expectedPayload'],
+                json_encode([
+                    'message' => 'Job submitted successfully.',
+                    'jobId' => '1234567890',
+                ]),
+                new ApiResponse(
+                    responseCode: 200,
+                    message: 'Job submitted successfully.',
+                    status: null,
+                    jobId: '1234567890',
+                    errors: null,
+                ),
+            ],
+            [
+                $updates['records'],
+                $updates['expectedPayload'],
+                json_encode([
+                    'errors' => [
+                        'foo',
+                    ],
+                ]),
+                new ApiResponse(
+                    responseCode: 200,
+                    message: '',
+                    status: null,
+                    jobId: null,
+                    errors: ['foo'],
+                ),
+            ],
+            [
+                $updates['records'],
+                $updates['expectedPayload'],
+                json_encode([
+                    'message' => 'Foo',
+                    'status' => 'OK',
+                ]),
+                new ApiResponse(
+                    responseCode: 200,
+                    message: 'Foo',
+                    status: 'OK',
+                    jobId: null,
+                    errors: null,
+                ),
+            ],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('dataProvider_testSend_Patch_Success')]
+    public function testSend_Patch_Success(
+        IteratorInterface $records,
+        string $expectedPayload,
+        string $apiResponse,
+        ApiResponse $expectedResult,
+    ): void {
+        $mockResponse = $this->getMockResponse(
+            statusCode: 200,
+            bodyContents: $apiResponse,
+        );
+
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->once())
+            ->method('sendRequest')
+            ->with($this->callback(function (RequestInterface $request) use ($expectedPayload): bool {
+
+                $this->assertSame('PATCH', $request->getMethod());
+                $this->assertSame(
+                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    actual: (string)$request->getUri(),
+                );
+
+                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
+
+                $userAgentHeaders = $request->getHeader('User-Agent');
+                $this->assertIsArray($userAgentHeaders);
+                $this->assertCount(1, $userAgentHeaders);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    string: $userAgentHeaders[0],
+                );
+
+                $this->assertSame(
+                    expected: ['klevu-1234567890'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_APIKEY),
+                );
+                $this->assertSame(
+                    expected: ['HmacSHA384'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_AUTH_ALGO),
+                );
+
+                $timestampHeader = $request->getHeader(ApiServiceInterface::API_HEADER_KEY_TIMESTAMP);
+                $this->assertIsArray($timestampHeader);
+                $this->assertCount(1, $timestampHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/',
+                    string: $timestampHeader[0],
+                );
+                $timestampUnixtime = strtotime($timestampHeader[0]);
+                $this->assertGreaterThan(
+                    expected: time() - 3600,
+                    actual: $timestampUnixtime,
+                );
+                $this->assertLessThan(
+                    expected: time() + 60,
+                    actual: $timestampUnixtime,
+                );
+
+                $authorizationHeader = $request->getHeader('Authorization');
+                $this->assertIsArray($authorizationHeader);
+                $this->assertCount(1, $authorizationHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^Bearer [-A-Za-z0-9+/]*={0,3}$#',
+                    string: $authorizationHeader[0],
+                );
+
+                $requestBody = $request->getBody();
+                $requestBodyContents = $requestBody->getContents();
+                $requestBody->rewind();
+
+                $this->assertSame(
+                    expected: $expectedPayload,
+                    actual: $requestBodyContents,
+                );
+
+                return true;
+            }))
+            ->willReturn($mockResponse);
+
+        $batchService = new BatchService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $sendResponse = $batchService->send(
+            accountCredentials: $accountCredentials,
+            records: $records,
+            method: 'PATCH',
+        );
+
+        $this->assertEquals(
+            expected: $expectedResult,
+            actual: $sendResponse,
+        );
+    }
+
+    #[Test]
+    #[DataProvider('dataProvider_testSend_Patch_Success')]
+    public function testPatch_Success(
+        UpdateIterator $records,
+        string $expectedPayload,
+        string $apiResponse,
+        ApiResponse $expectedResult,
+    ): void {
+        $mockResponse = $this->getMockResponse(
+            statusCode: 200,
+            bodyContents: $apiResponse,
+        );
+
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->once())
+            ->method('sendRequest')
+            ->with($this->callback(function (RequestInterface $request) use ($expectedPayload): bool {
+
+                $this->assertSame('PATCH', $request->getMethod());
+                $this->assertSame(
+                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    actual: (string)$request->getUri(),
+                );
+
+                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
+
+                $userAgentHeaders = $request->getHeader('User-Agent');
+                $this->assertIsArray($userAgentHeaders);
+                $this->assertCount(1, $userAgentHeaders);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    string: $userAgentHeaders[0],
+                );
+
+                $this->assertSame(
+                    expected: ['klevu-1234567890'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_APIKEY),
+                );
+                $this->assertSame(
+                    expected: ['HmacSHA384'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_AUTH_ALGO),
+                );
+
+                $timestampHeader = $request->getHeader(ApiServiceInterface::API_HEADER_KEY_TIMESTAMP);
+                $this->assertIsArray($timestampHeader);
+                $this->assertCount(1, $timestampHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/',
+                    string: $timestampHeader[0],
+                );
+                $timestampUnixtime = strtotime($timestampHeader[0]);
+                $this->assertGreaterThan(
+                    expected: time() - 3600,
+                    actual: $timestampUnixtime,
+                );
+                $this->assertLessThan(
+                    expected: time() + 60,
+                    actual: $timestampUnixtime,
+                );
+
+                $authorizationHeader = $request->getHeader('Authorization');
+                $this->assertIsArray($authorizationHeader);
+                $this->assertCount(1, $authorizationHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^Bearer [-A-Za-z0-9+/]*={0,3}$#',
+                    string: $authorizationHeader[0],
+                );
+
+                $requestBody = $request->getBody();
+                $requestBodyContents = $requestBody->getContents();
+                $requestBody->rewind();
+
+                $this->assertSame(
+                    expected: $expectedPayload,
+                    actual: $requestBodyContents,
+                );
+
+                return true;
+            }))
+            ->willReturn($mockResponse);
+
+        $batchService = new BatchService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $sendResponse = $batchService->patch(
+            accountCredentials: $accountCredentials,
+            updates: $records,
+        );
+
+        $this->assertEquals(
+            expected: $expectedResult,
+            actual: $sendResponse,
+        );
     }
 
     /**

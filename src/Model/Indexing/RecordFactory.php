@@ -40,8 +40,11 @@ class RecordFactory
         if (array_key_exists(Record::FIELD_ATTRIBUTES, $data)) {
             $record->setAttributes($data[Record::FIELD_ATTRIBUTES]);
         }
-        if (array_key_exists(Record::FIELD_DISPLAY, $data)) {
-            $record->setDisplay($data[Record::FIELD_DISPLAY]);
+        if (array_key_exists(Record::FIELD_GROUPS, $data)) {
+            $record->setGroups($data[Record::FIELD_GROUPS]);
+        }
+        if (array_key_exists(Record::FIELD_CHANNELS, $data)) {
+            $record->setChannels($data[Record::FIELD_CHANNELS]);
         }
 
         return $record;

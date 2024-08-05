@@ -64,7 +64,7 @@ class RecordFactoryTest extends TestCase
                 [
                     'id' => '12345',
                     'type' => 'KLEVU_PRODUCT',
-                    'display' => (object)['foo' => 'bar'],
+                    'channels' => (object)['foo' => 'bar'],
                 ],
                 \TypeError::class,
             ],
@@ -105,7 +105,8 @@ class RecordFactoryTest extends TestCase
                     'type' => 'KLEVU_PRODUCT',
                     'relations' => null,
                     'attributes' => [],
-                    'display' => null,
+                    'groups' => null,
+                    'channels' => null,
                 ],
             ],
             [
@@ -125,9 +126,11 @@ class RecordFactoryTest extends TestCase
                             'default' => 'Foo',
                         ],
                     ],
-                    'display' => [
+                    'channels' => [
                         'default' => [
-                            'foo' => 'bar',
+                            'attributes' => [
+                                'foo' => 'bar',
+                            ],
                         ],
                     ],
                 ],
@@ -147,9 +150,94 @@ class RecordFactoryTest extends TestCase
                             'default' => 'Foo',
                         ],
                     ],
-                    'display' => [
+                    'groups' => null,
+                    'channels' => [
                         'default' => [
-                            'foo' => 'bar',
+                            'attributes' => [
+                                'foo' => 'bar',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                [
+                    'id' => '12345',
+                    'type' => 'KLEVU_PRODUCT',
+                    'relations' => [
+                        'categories' => [
+                            'type' => 'KLEVU_CATEGORY',
+                            'values' => [
+                                'foo',
+                            ],
+                        ],
+                    ],
+                    'attributes' => [
+                        'name' => [
+                            'default' => 'Foo',
+                        ],
+                    ],
+                    'groups' => [
+                        'fr_FR' => [
+                            'attributes' => [
+                                'wom' => [
+                                    'bat',
+                                ],
+                            ],
+                        ],
+                    ],
+                    'channels' => [
+                        'default' => [
+                            'attributes' => [
+                                'foo' => 'bar',
+                            ],
+                            'groups' => [
+                                'fr_FR' => [
+                                    'attributes' => [
+                                        'wom' => 'bat',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'id' => '12345',
+                    'type' => 'KLEVU_PRODUCT',
+                    'relations' => [
+                        'categories' => [
+                            'type' => 'KLEVU_CATEGORY',
+                            'values' => [
+                                'foo',
+                            ],
+                        ],
+                    ],
+                    'attributes' => [
+                        'name' => [
+                            'default' => 'Foo',
+                        ],
+                    ],
+                    'groups' => [
+                        'fr_FR' => [
+                            'attributes' => [
+                                'wom' => [
+                                    'bat',
+                                ],
+                            ],
+                        ],
+                    ],
+                    'channels' => [
+                        'default' => [
+                            'attributes' => [
+                                'foo' => 'bar',
+                            ],
+                            'groups' => [
+                                'fr_FR' => [
+                                    'attributes' => [
+                                        'wom' => 'bat',
+                                    ],
+                                ],
+                            ],
                         ],
                     ],
                 ],

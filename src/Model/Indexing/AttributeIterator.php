@@ -50,11 +50,11 @@ class AttributeIterator implements IteratorInterface
      * Returns the current attribute
      *
      * @link https://php.net/manual/en/iterator.current.php
-     * @return AttributeInterface
+     * @return AttributeInterface|null
      */
-    public function current(): AttributeInterface
+    public function current(): ?AttributeInterface
     {
-        return $this->data[$this->key()];
+        return $this->data[$this->key()] ?? null;
     }
 
     /**

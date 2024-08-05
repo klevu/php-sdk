@@ -14,7 +14,7 @@ use Klevu\PhpSDK\Validator\ValidatorInterface;
 /**
  * Validator to test that a Record's "relations" value is valid for indexing
  *
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  */
 class RelationsValidator implements ValidatorInterface

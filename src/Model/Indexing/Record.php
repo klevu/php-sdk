@@ -12,12 +12,16 @@ namespace Klevu\PhpSDK\Model\Indexing;
 use Klevu\PhpSDK\Api\Model\Indexing\AttributeInterface;
 use Klevu\PhpSDK\Api\Model\Indexing\RecordInterface;
 use Klevu\PhpSDK\Service\Indexing\BatchService;
+// phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
+use Klevu\PhpSDK\Validator\Indexing\Record\ChannelsValidator;
+// phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
+use Klevu\PhpSDK\Validator\Indexing\Record\GroupsValidator;
 
 /**
  * Data model representation of a Klevu Indexing record, such as a product
  *
  * @link https://docs.klevu.com/indexing-apis/add-simple-products-in-your-catalog
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @see BatchService
  * @since 1.0.0
  */
@@ -56,13 +60,21 @@ class Record implements RecordInterface
      */
     final public const FIELD_ATTRIBUTES = 'attributes';
     /**
-     * Key used to reference display property when converting to/from array
+     * Key used to reference groups property when converting to/from array
      *
      * @see Record::toArray()
      * @see RecordFactory::create()
      * @var string
      */
-    final public const FIELD_DISPLAY = 'display';
+    final public const FIELD_GROUPS = 'groups';
+    /**
+     * Key used to reference channels property when converting to/from array
+     *
+     * @see Record::toArray()
+     * @see RecordFactory::create()
+     * @var string
+     */
+    final public const FIELD_CHANNELS = 'channels';
 
     /**
      * @var string
@@ -73,31 +85,37 @@ class Record implements RecordInterface
      */
     private readonly string $type;
     /**
-     * @var mixed[][]|null
+     * @var array<string, mixed[]>|null
      */
     private ?array $relations = null;
     /**
-     * @var mixed[]
+     * @var array<string, mixed>
      */
     private array $attributes = [];
     /**
-     * @var mixed[]|null
+     * @var array<string|int, array<string, mixed>|mixed>|null
      */
-    private ?array $display = null;
+    private ?array $groups = null;
+    /**
+     * @var array<string|int, array<string, mixed>|mixed>|null
+     */
+    private ?array $channels = null;
 
     /**
      * @param string $id
      * @param string $type
      * @param mixed[][]|null $relations
      * @param mixed[]|null $attributes
-     * @param mixed[]|null $display
+     * @param mixed[]|null $groups
+     * @param mixed[]|null $channels
      */
     public function __construct(
         string $id,
         string $type,
         ?array $relations = null,
         ?array $attributes = null,
-        ?array $display = null,
+        ?array $groups = null,
+        ?array $channels = null,
     ) {
         $this->id = $id;
         $this->type = $type;
@@ -105,7 +123,8 @@ class Record implements RecordInterface
         if (null !== $attributes) {
             $this->setAttributes($attributes);
         }
-        $this->setDisplay($display);
+        $this->setGroups($groups);
+        $this->setChannels($channels);
     }
 
     /**
@@ -138,7 +157,7 @@ class Record implements RecordInterface
      * Object key should be one of "categories" or "parentProduct", with corresponding data
      *  for value, as found in API documentation
      *
-     * @link https://docs.klevu.com/indexing-apis/api-definition
+     * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
      *
      * @param array<string, mixed[]>|null $relations
      *
@@ -168,7 +187,7 @@ class Record implements RecordInterface
     /**
      * Adds a relation to the existing relations array
      *
-     * @link https://docs.klevu.com/indexing-apis/api-definition
+     * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
      *
      * @param mixed[] $relation See API documentation for required fields / format
      * @param string $key Should be one of "categories", "parentProduct"
@@ -227,54 +246,107 @@ class Record implements RecordInterface
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array<string|int, array<string, mixed>|mixed>|null
      */
-    public function getDisplay(): ?array
+    public function getGroups(): ?array
     {
-        return $this->display;
+        return $this->groups;
     }
 
     /**
-     * Sets array of attribute name => value pairs to be updated in index for return with search requests
+     * Sets array of group name => values to be overridden
      *
-     *  Array key should correspond to an existing {@see AttributeInterface::getAttributeName()} value, with a
-     *   value of the appropriate type based on the attribute definition
+     * @note Invalid data is accepted at this stage; validation is performed before sync using {@see GroupsValidator}
      *
-     * @param array<string, mixed>|null $display
+     * @param array<string, array<string, mixed>|mixed>|null $groups
      *
      * @return void
      */
-    public function setDisplay(?array $display): void
+    public function setGroups(?array $groups): void
     {
-        if (null === $display) {
-            $this->display = null;
+        if (null === $groups) {
+            $this->groups = null;
 
             return;
         }
 
-        $this->display = [];
+        $this->groups = [];
         array_walk(
-            $display,
-            function (mixed $value, mixed $attributeCode): void {
-                $this->addDisplay(
-                    attributeName: $attributeCode,
-                    value: $value,
+            $groups,
+            function (mixed $groupData, mixed $groupName): void {
+                $this->addGroup(
+                    groupName: $groupName,
+                    groupData: $groupData,
                 );
             },
         );
     }
 
     /**
-     * Adds to the existing attribute data to be updated in index for return with search requests
+     * Adds to the existing group data to be updated in the index
      *
-     * @param string $attributeName Should correspond to an existing attribute's attributeName value
-     * @param mixed $value Should be of appropriate type based on the attribute definition
+     * @note Invalid data is accepted at this stage; validation is performed before sync using {@see GroupsValidator}
+     *
+     * @param string|int $groupName Group name to be created / updated
+     * @param array<string, mixed>|mixed $groupData Array of data to be assigned to this group
      *
      * @return void
      */
-    public function addDisplay(string $attributeName, mixed $value): void
+    public function addGroup(string|int $groupName, mixed $groupData): void
     {
-        $this->display[$attributeName] = $value;
+        $this->groups[$groupName] = $groupData;
+    }
+
+    /**
+     * @return array<string|int, array<string, mixed>|mixed>|null
+     */
+    public function getChannels(): ?array
+    {
+        return $this->channels;
+    }
+
+    /**
+     * Sets array of channel name => values to be overridden
+     *
+     * @note Invalid data is accepted at this stage; validation is performed before sync using {@see ChannelsValidator}
+     *
+     * @param array<string, array<string, mixed>|mixed>|null $channels
+     *
+     * @return void
+     */
+    public function setChannels(?array $channels): void
+    {
+        if (null === $channels) {
+            $this->channels = null;
+
+            return;
+        }
+
+        $this->channels = [];
+        array_walk(
+            $channels,
+            function (mixed $channelData, mixed $channelName): void {
+                $this->addChannel(
+                    channelName: $channelName,
+                    channelData: $channelData,
+                );
+            },
+        );
+    }
+
+    /**
+     * Adds to the existing channel data to be updated in the index
+     *
+     * @note Invalid data is accepted at this stage; validation is performed before sync using {@see ChannelsValidator}
+     *
+     * @param string|int $channelName Channel name to be created / updated
+     * @param array<string, mixed>|mixed $channelData Array of data to be assigned to this channel
+     *
+     * @return void
+     */
+    public function addChannel(string|int $channelName, mixed $channelData): void
+    {
+        $this->channels[$channelName] = $channelData;
     }
 
     /**
@@ -287,7 +359,8 @@ class Record implements RecordInterface
             self::FIELD_TYPE => $this->getType(),
             self::FIELD_RELATIONS => $this->getRelations(),
             self::FIELD_ATTRIBUTES => $this->getAttributes(),
-            self::FIELD_DISPLAY => $this->getDisplay(),
+            self::FIELD_GROUPS => $this->getGroups(),
+            self::FIELD_CHANNELS => $this->getChannels(),
         ];
     }
 }

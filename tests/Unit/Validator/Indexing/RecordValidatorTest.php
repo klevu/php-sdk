@@ -232,21 +232,27 @@ class RecordValidatorTest extends TestCase
     /**
      * @return mixed[][]
      */
-    public static function dataProvider_testExecute_InvalidDisplay(): array
+    public static function dataProvider_testExecute_InvalidGroups(): array
     {
         return [
             [
                 new Record(
                     id: '123-456',
                     type: 'KLEVU_PRODUCT',
-                    display: [
+                    groups: [
                         '' => 'foo',
-                        ' ' => 'bar',
+                        ' ' => [
+                            'wom' => 'bat',
+                        ],
+                        'group1' => [
+                            'attributes' => 'foo',
+                        ],
                     ],
                 ),
                 [
-                    'display: [] Attribute Name is required',
-                    'display: [ ] Attribute Name is required',
+                    'groups: [] Group Name is required; Group data must be array, received string',
+                    'groups: [ ] Group Name is required',
+                    'groups: [group1] Attributes must be array, received string',
                 ],
             ],
         ];
@@ -259,8 +265,191 @@ class RecordValidatorTest extends TestCase
      * @return void
      */
     #[Test]
-    #[DataProvider('dataProvider_testExecute_InvalidDisplay')]
-    public function testExecute_InvalidDisplay(
+    #[DataProvider('dataProvider_testExecute_InvalidGroups')]
+    public function testExecute_InvalidGroups(
+        mixed $data,
+        array $expectedErrors,
+    ): void {
+        $recordValidator = new RecordValidator();
+
+        $this->expectException(InvalidDataValidationException::class);
+        try {
+            $recordValidator->execute($data);
+        } catch (ValidationException $exception) {
+            $errors = $exception->getErrors();
+            $this->assertCount(
+                expectedCount: count($expectedErrors),
+                haystack: $errors,
+            );
+
+            sort($expectedErrors);
+            sort($errors);
+            $this->assertSame(
+                expected: $expectedErrors,
+                actual: $errors,
+            );
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * @return mixed[][]
+     */
+    public static function dataProvider_testExecute_InvalidChannels(): array
+    {
+        return [
+            [
+                new Record(
+                    id: '123-456',
+                    type: 'KLEVU_PRODUCT',
+                    channels: [
+                        '' => 'foo',
+                        ' ' => [
+                            'wom' => 'bat',
+                        ],
+                        'channel4' => [
+                            'attributes' => 'foo',
+                        ],
+                    ],
+                ),
+                [
+                    'channels: [] Channel Name is required; Channel data must be array, received string',
+                    'channels: [ ] Channel Name is required',
+                    'channels: [channel4] Attributes must be array, received string',
+                ],
+            ],
+            // phpcs:disable Generic.Files.LineLength.TooLong
+            [
+                new Record(
+                    id: '123-456',
+                    type: 'KLEVU_PRODUCT',
+                    channels: [
+                        'CHANNEL1' => [
+                            'attributes' => [
+                                '' => [],
+                                ' ' => [],
+                                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' => [],
+                                '   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   ' => [],
+                            ],
+                        ],
+                        'channel__2' => [
+                            'attributes' => [
+                                '_foo' => [],
+                                'foo_' => [],
+                                '_foo_' => [],
+                                'product-name' => [],
+                                'foo!bar' => [],
+                                'テスト属性' => [],
+                            ],
+                        ],
+                    ],
+                ),
+                [
+                    'channels: [CHANNEL1] '
+                        . '[] Attribute Name is required; '
+                        . '[ ] Attribute Name is required; '
+                        . '[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] Attribute Name must be less than or equal to 200 characters; '
+                        . '[   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   ] Attribute Name must be less than or equal to 200 characters',
+                    'channels: [channel__2] '
+                        . '[_foo] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[_foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[product-name] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[foo!bar] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[テスト属性] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore',
+                ],
+            ],
+            // phpcs:enable Generic.Files.LineLength.TooLong
+            [
+                new Record(
+                    id: '123-456',
+                    type: 'KLEVU_PRODUCT',
+                    channels: [
+                        'fr_FR' => [
+                            'groups' => [
+                                'fr-FR' => [
+                                    'attributes' => [
+                                        'attribute' => 'value',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ),
+                [
+                    'channels: [fr_FR] [fr-FR] Group Name must be alphanumeric, and can include underscores (_)',
+                ],
+            ],
+            // phpcs:disable Generic.Files.LineLength.TooLong
+            [
+                new Record(
+                    id: '123-456',
+                    type: 'KLEVU_PRODUCT',
+                    channels: [
+                        'CHANNEL1' => [
+                            'groups' => [
+                                'fr_FR' => [
+                                    'attributes' => [
+                                        '' => [],
+                                        ' ' => [],
+                                        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' => [],
+                                        '   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   ' => [],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'channel__2' => [
+                            'groups' => [
+                                'fr_FR' => [
+                                    'attributes' => [
+                                        '_foo' => [],
+                                        'foo_' => [],
+                                        '_foo_' => [],
+                                    ],
+                                ],
+                                'en_GB' => [
+                                    'attributes' => [
+                                        'product-name' => [],
+                                        'foo!bar' => [],
+                                        'テスト属性' => [],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ),
+                [
+                    'channels: [CHANNEL1] '
+                        . '[fr_FR] '
+                        . '[] Attribute Name is required; '
+                        . '[ ] Attribute Name is required; '
+                        . '[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] Attribute Name must be less than or equal to 200 characters; '
+                        . '[   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   ] Attribute Name must be less than or equal to 200 characters',
+                    'channels: [channel__2] '
+                        . '[fr_FR] '
+                        . '[_foo] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[_foo_] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[en_GB] '
+                        . '[product-name] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[foo!bar] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore; '
+                        . '[テスト属性] Attribute Name must be alphanumeric, can include underscores (_) but cannot start or end with an underscore',
+                ],
+            ],
+            // phpcs:enable Generic.Files.LineLength.TooLong
+        ];
+    }
+
+    /**
+     * @param mixed $data
+     * @param string[] $expectedErrors
+     *
+     * @return void
+     */
+    #[Test]
+    #[DataProvider('dataProvider_testExecute_InvalidChannels')]
+    public function testExecute_InvalidChannels(
         mixed $data,
         array $expectedErrors,
     ): void {
@@ -301,15 +490,17 @@ class RecordValidatorTest extends TestCase
                     attributes: [
                         '' => 'foo',
                     ],
-                    display: [
-                        ' ' => 'bar',
+                    channels: [
+                        ' ' => [
+                            'foo' => 'bar',
+                        ],
                     ],
                 ),
                 [
                     'id: Record Id is required',
                     'type: Record Type is required',
                     'attributes: [] Attribute Name is required',
-                    'display: [ ] Attribute Name is required',
+                    'channels: [ ] Channel Name is required',
                 ],
             ],
         ];
@@ -362,7 +553,7 @@ class RecordValidatorTest extends TestCase
                     type: 'KLEVU_PRODUCT',
                     relations: null,
                     attributes: [],
-                    display: null,
+                    channels: null,
                 ),
             ],
             [
@@ -371,7 +562,7 @@ class RecordValidatorTest extends TestCase
                     type: 'KLEVU_PRODUCT',
                     relations: [],
                     attributes: [],
-                    display: [],
+                    channels: [],
                 ),
             ],
             [
@@ -470,7 +661,7 @@ class RecordValidatorTest extends TestCase
                         'visibility' => 'catalog-search',
                         'additionalProp1' => 'string',
                     ],
-                    display: [
+                    channels: [
                         'additionalProp1' => [],
                         'additionalProp2' => [],
                         'additionalProp3' => [],
@@ -500,7 +691,7 @@ class RecordValidatorTest extends TestCase
             type: 'KLEVU_PRODUCT',
             relations: [],
             attributes: [],
-            display: [],
+            channels: [],
         );
 
         return [
@@ -518,11 +709,8 @@ class RecordValidatorTest extends TestCase
                     'attributes' => [
                         new InvalidDataValidator(['Attributes: Invalid Data']),
                     ],
-                    'display' => [
-                        new InvalidTypeValidator(['Display: Invalid Type']),
-                    ],
                     'channels' => [
-                        new InvalidDataValidator(['Channels: Invalid Data']),
+                        new InvalidTypeValidator(['Channels: Invalid Type']),
                     ],
                 ],
                 $validRecord,
@@ -531,9 +719,7 @@ class RecordValidatorTest extends TestCase
                     'type: Type: Invalid Data',
                     'relations: Relations: Invalid Type',
                     'attributes: Attributes: Invalid Data',
-                    'display: Display: Invalid Type',
-                    // Channels not yet implemented
-//                    'channels: Channels: Invalid Data',
+                    'channels: Channels: Invalid Type',
                 ],
             ],
             [
@@ -548,9 +734,6 @@ class RecordValidatorTest extends TestCase
                     'attributes' => [
                         new InvalidDataValidator(['Attributes: Invalid Data']),
                     ],
-                    'display' => [
-                        new InvalidTypeValidator(['Display: Invalid Type']),
-                    ],
                     'channels' => [
                         new InvalidDataValidator(['Channels: Invalid Data']),
                     ],
@@ -560,9 +743,7 @@ class RecordValidatorTest extends TestCase
                     'id: ID: Invalid Type',
                     'type: Type: Invalid Data',
                     'attributes: Attributes: Invalid Data',
-                    'display: Display: Invalid Type',
-                    // Channels not yet implemented
-//                    'channels: Channels: Invalid Data',
+                    'channels: Channels: Invalid Data',
                 ],
             ],
         ];
@@ -622,7 +803,7 @@ class RecordValidatorTest extends TestCase
                     attributes: [
                         '' => 'foo',
                     ],
-                    display: [
+                    channels: [
                         ' ' => 'bar',
                     ],
                 ),

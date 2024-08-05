@@ -15,7 +15,9 @@ use Klevu\PhpSDK\Api\Service\Account\AccountLookupServiceInterface;
 use Klevu\PhpSDK\Exception\AccountNotFoundException;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
+use Klevu\PhpSDK\Model\Account;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\AccountFactory;
 use Klevu\PhpSDK\Provider\BaseUrlsProvider;
@@ -165,6 +167,7 @@ class AccountLookupService implements AccountLookupServiceInterface
      *
      * @return AccountInterface
      * @throws ValidationException Where provided credentials fail internal validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws AccountNotFoundException Where no account is found for the provided credentials
@@ -223,24 +226,26 @@ class AccountLookupService implements AccountLookupServiceInterface
         );
 
         return $this->accountFactory->create([
-            'jsApiKey' => $accountCredentials->jsApiKey,
-            'restAuthKey' => $accountCredentials->restAuthKey,
-            'platform' => $parsedResponseBody['platform'] ?? null,
-            'active' => (bool)($parsedResponseBody['active'] ?? false),
-            'companyName' => $parsedResponseBody['companyName'] ?? null,
-            'email' => $parsedResponseBody['email'] ?? null,
-            'indexingUrl' => $parsedResponseBody['indexingUrl']
+            Account::FIELD_JS_API_KEY => $accountCredentials->jsApiKey,
+            Account::FIELD_REST_AUTH_KEY => $accountCredentials->restAuthKey,
+            Account::FIELD_PLATFORM => $parsedResponseBody['platform'] ?? null,
+            Account::FIELD_ACTIVE => (bool)($parsedResponseBody['active'] ?? false),
+            Account::FIELD_COMPANY_NAME => $parsedResponseBody['companyName'] ?? null,
+            Account::FIELD_EMAIL => $parsedResponseBody['email'] ?? null,
+            Account::FIELD_INDEXING_URL => $parsedResponseBody['indexingUrl']
                 ?? $this->baseUrlsProvider->getIndexingUrl(),
-            'searchUrl' => $parsedResponseBody['searchUrl']
+            Account::FIELD_SEARCH_URL => $parsedResponseBody['searchUrl']
                 ?? $this->baseUrlsProvider->getSearchUrl(),
-            'smartCategoryMerchandisingUrl' => $parsedResponseBody['catNavUrl']
+            Account::FIELD_SMART_CATEGORY_MERCHANDISING_URL => $parsedResponseBody['catNavUrl']
                 ?? $this->baseUrlsProvider->getSmartCategoryMerchandisingUrl(),
-            'analyticsUrl' => $parsedResponseBody['analyticsUrl']
+            Account::FIELD_ANALYTICS_URL => $parsedResponseBody['analyticsUrl']
                 ?? $this->baseUrlsProvider->getAnalyticsUrl(),
-            'jsUrl' => $parsedResponseBody['jsUrl']
+            Account::FIELD_JS_URL => $parsedResponseBody['jsUrl']
                 ?? $this->baseUrlsProvider->getJsUrl(),
-            'tiersUrl' => $parsedResponseBody['tiersUrl']
+            Account::FIELD_TIERS_URL => $parsedResponseBody['tiersUrl']
                 ?? $this->baseUrlsProvider->getTiersUrl(),
+            Account::FIELD_INDEXING_VERSION => $parsedResponseBody['indexingVersion'] ?? '',
+            Account::FIELD_DEFAULT_CURRENCY => $parsedResponseBody['defaultCurrency'] ?? '',
         ]);
     }
 

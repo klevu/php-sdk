@@ -13,6 +13,7 @@ use Http\Discovery\Psr18ClientDiscovery;
 use Klevu\PhpSDK\Api\Service\Account\AccountFeaturesServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\Account\AccountFeatures;
 use Klevu\PhpSDK\Model\Account\AccountFeaturesFactory;
@@ -157,6 +158,7 @@ class AccountFeaturesService implements AccountFeaturesServiceInterface
      * @return AccountFeatures
      * @throws ValidationException Where provided credentials and/or feature list contains invalid information and
      *       fails internal validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */

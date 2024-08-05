@@ -20,6 +20,8 @@ use Klevu\PhpSDK\Model\ApiResponse;
 use Klevu\PhpSDK\Model\Indexing\AuthAlgorithms;
 use Klevu\PhpSDK\Model\Indexing\Record;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateFactory;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\ComposableUserAgentProviderInterface;
 use Klevu\PhpSDK\Provider\Indexing\IndexingVersions;
@@ -238,7 +240,7 @@ class DeleteServiceTest extends TestCase
                     'visibility' => 'catalog-search',
                     'additionalProp1' => 'string',
                 ],
-                display: [
+                channels: [
                     'additionalProp1' => [],
                     'additionalProp2' => [],
                     'additionalProp3' => [],
@@ -312,6 +314,111 @@ class DeleteServiceTest extends TestCase
                 ),
             ],
         ];
+    }
+
+    #[Test]
+    #[DataProvider('dataProvider_testSend_Success')]
+    public function testPut_Success(
+        RecordIterator $records,
+        string $apiResponse,
+        ApiResponse $expectedResult,
+    ): void {
+        $mockResponse = $this->getMockResponse(
+            statusCode: 200,
+            bodyContents: $apiResponse,
+        );
+
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->once())
+            ->method('sendRequest')
+            ->with($this->callback(function (RequestInterface $request) use ($records): bool {
+                $this->assertSame('PUT', $request->getMethod());
+                $this->assertSame(
+                    expected: 'https://indexing.ksearchnet.com/v2/batch/delete',
+                    actual: (string)$request->getUri(),
+                );
+
+                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
+
+                $userAgentHeaders = $request->getHeader('User-Agent');
+                $this->assertIsArray($userAgentHeaders);
+                $this->assertCount(1, $userAgentHeaders);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    string: $userAgentHeaders[0],
+                );
+
+                $this->assertSame(
+                    expected: ['klevu-1234567890'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_APIKEY),
+                );
+                $this->assertSame(
+                    expected: ['HmacSHA384'],
+                    actual: $request->getHeader(ApiServiceInterface::API_HEADER_KEY_AUTH_ALGO),
+                );
+
+                $timestampHeader = $request->getHeader(ApiServiceInterface::API_HEADER_KEY_TIMESTAMP);
+                $this->assertIsArray($timestampHeader);
+                $this->assertCount(1, $timestampHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/',
+                    string: $timestampHeader[0],
+                );
+                $timestampUnixtime = strtotime($timestampHeader[0]);
+                $this->assertGreaterThan(
+                    expected: time() - 3600,
+                    actual: $timestampUnixtime,
+                );
+                $this->assertLessThan(
+                    expected: time() + 60,
+                    actual: $timestampUnixtime,
+                );
+
+                $authorizationHeader = $request->getHeader('Authorization');
+                $this->assertIsArray($authorizationHeader);
+                $this->assertCount(1, $authorizationHeader);
+                $this->assertMatchesRegularExpression(
+                    pattern: '#^Bearer [-A-Za-z0-9+/]*={0,3}$#',
+                    string: $authorizationHeader[0],
+                );
+
+                $requestBody = $request->getBody();
+                $requestBodyContents = $requestBody->getContents();
+                $requestBody->rewind();
+
+                $this->assertSame(
+                    expected: json_encode([
+                        'ids' => array_map(
+                            static fn (RecordInterface $record): string => $record->getId(),
+                            $records->toArray(),
+                        ),
+                    ]),
+                    actual: $requestBodyContents,
+                );
+
+                return true;
+            }))
+            ->willReturn($mockResponse);
+
+        $deleteService = new DeleteService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $sendResponse = $deleteService->put(
+            accountCredentials: $accountCredentials,
+            records: $records,
+        );
+
+        $this->assertEquals(
+            expected: $expectedResult,
+            actual: $sendResponse,
+        );
     }
 
     #[Test]
@@ -411,6 +518,7 @@ class DeleteServiceTest extends TestCase
         $sendResponse = $deleteService->send(
             accountCredentials: $accountCredentials,
             records: $records,
+            method: 'PUT',
         );
 
         $this->assertEquals(
@@ -742,11 +850,17 @@ class DeleteServiceTest extends TestCase
 
     /**
      * @return mixed[][]
+     * @throws \LogicException
      */
     public static function dataProvider_testSend_BatchSizeExceedsLimit(): array
     {
         $records = self::getValidRecordFixtures();
         $validRecord = $records->current();
+        if (null === $validRecord) {
+            throw new \LogicException(
+                'Error retrieving current valid record from fixtures',
+            );
+        }
 
         return [
             [
@@ -1070,24 +1184,33 @@ class DeleteServiceTest extends TestCase
     }
 
     #[Test]
-    #[TestWith([400])]
-    #[TestWith([401])]
-    #[TestWith([403])]
-    #[TestWith([404])]
-    #[TestWith([405])]
+    #[TestWith([400, null, 'API request rejected by Klevu API [400]'])]
+    #[TestWith([401, null, 'API request rejected by Klevu API [401]'])]
+    #[TestWith([403, null, 'API request rejected by Klevu API [403]'])]
+    #[TestWith([404, null, 'API request rejected by Klevu API [404]'])]
+    #[TestWith([405, null, 'API request rejected by Klevu API [405]'])]
+    #[TestWith([400, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([401, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([403, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([404, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([405, 'Invalid Payload request', 'Invalid Payload request'])]
     public function testSend_BadRequest(
         int $statusCode,
+        ?string $message,
+        string $expectedExceptionMessage,
     ): void {
         $mockResponse = $this->getMockResponse(
             statusCode: $statusCode,
-            bodyContents: (string)json_encode([
-                'status' => 'BAD_REQUEST',
-                'message' => 'Invalid Payload request',
-                'errors' => [
-                    'save.items[0]: Exception while validating field : id',
-                    'save.items[0]: Exception while validating field : type',
-                ],
-            ]),
+            bodyContents: (string)json_encode(
+                value: array_filter([
+                    'status' => 'BAD_REQUEST',
+                    'message' => $message,
+                    'errors' => [
+                        'save.items[0]: Exception while validating field : id',
+                        'save.items[0]: Exception while validating field : type',
+                    ],
+                ]),
+            ),
         );
 
         $mockHttpClient = $this->getMockHttpClient();
@@ -1105,24 +1228,22 @@ class DeleteServiceTest extends TestCase
         );
 
         $this->expectException(BadRequestException::class);
-        $this->expectExceptionMessage(
-            sprintf(
-                'API request rejected by Klevu API [%d] Invalid Payload request',
-                $statusCode,
-            ),
-        );
+        $this->expectExceptionMessage($expectedExceptionMessage);
         try {
             $deleteService->send(
                 accountCredentials: $accountCredentials,
                 records: self::getValidRecordFixtures(),
             );
         } catch (BadRequestException $exception) {
+            $expectedErrors = [];
+            if ($message) {
+                $expectedErrors[] = $message;
+            }
+            $expectedErrors[] = 'save.items[0]: Exception while validating field : id';
+            $expectedErrors[] = 'save.items[0]: Exception while validating field : type';
+
             $this->assertSame(
-                expected: [
-                    'Invalid Payload request',
-                    'save.items[0]: Exception while validating field : id',
-                    'save.items[0]: Exception while validating field : type',
-                ],
+                expected: $expectedErrors,
                 actual: $exception->getErrors(),
             );
 
@@ -1164,7 +1285,7 @@ class DeleteServiceTest extends TestCase
         $this->expectException(BadResponseException::class);
         $this->expectExceptionMessage(
             sprintf(
-                'API request rejected by Klevu API [%d] ',
+                'Unexpected Response Code [%d]',
                 $statusCode,
             ),
         );
@@ -2268,19 +2389,26 @@ class DeleteServiceTest extends TestCase
     }
 
     #[Test]
-    #[TestWith([400])]
-    #[TestWith([401])]
-    #[TestWith([403])]
-    #[TestWith([404])]
-    #[TestWith([405])]
+    #[TestWith([400, null, 'API request rejected by Klevu API [400]'])]
+    #[TestWith([401, null, 'API request rejected by Klevu API [401]'])]
+    #[TestWith([403, null, 'API request rejected by Klevu API [403]'])]
+    #[TestWith([404, null, 'API request rejected by Klevu API [404]'])]
+    #[TestWith([405, null, 'API request rejected by Klevu API [405]'])]
+    #[TestWith([400, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([401, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([403, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([404, 'Invalid Payload request', 'Invalid Payload request'])]
+    #[TestWith([405, 'Invalid Payload request', 'Invalid Payload request'])]
     public function testSendByIds_BadRequest(
         int $statusCode,
+        ?string $message,
+        string $expectedExceptionMessage,
     ): void {
         $mockResponse = $this->getMockResponse(
             statusCode: $statusCode,
             bodyContents: (string)json_encode([
                 'status' => 'BAD_REQUEST',
-                'message' => 'Invalid Payload request',
+                'message' => $message,
                 'errors' => [
                     'save.items[0]: Exception while validating field : id',
                     'save.items[0]: Exception while validating field : type',
@@ -2303,24 +2431,22 @@ class DeleteServiceTest extends TestCase
         );
 
         $this->expectException(BadRequestException::class);
-        $this->expectExceptionMessage(
-            sprintf(
-                'API request rejected by Klevu API [%d] Invalid Payload request',
-                $statusCode,
-            ),
-        );
+        $this->expectExceptionMessage($expectedExceptionMessage);
         try {
             $deleteService->sendByIds(
                 accountCredentials: $accountCredentials,
                 recordIds: ['1', '2', '3'],
             );
         } catch (BadRequestException $exception) {
+            $expectedErrors = [];
+            if ($message) {
+                $expectedErrors[] = $message;
+            }
+            $expectedErrors[] = 'save.items[0]: Exception while validating field : id';
+            $expectedErrors[] = 'save.items[0]: Exception while validating field : type';
+
             $this->assertSame(
-                expected: [
-                    'Invalid Payload request',
-                    'save.items[0]: Exception while validating field : id',
-                    'save.items[0]: Exception while validating field : type',
-                ],
+                expected: $expectedErrors,
                 actual: $exception->getErrors(),
             );
 
@@ -2362,7 +2488,7 @@ class DeleteServiceTest extends TestCase
         $this->expectException(BadResponseException::class);
         $this->expectExceptionMessage(
             sprintf(
-                'API request rejected by Klevu API [%d] ',
+                'Unexpected Response Code [%d]',
                 $statusCode,
             ),
         );
@@ -2422,6 +2548,75 @@ class DeleteServiceTest extends TestCase
 
             throw $exception;
         }
+    }
+
+    #[Test]
+    public function testPatch(): void
+    {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $deleteService = new DeleteService(
+            httpClient: $mockHttpClient,
+        );
+
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $updateFactory = new UpdateFactory();
+        $updates = new UpdateIterator([
+            $updateFactory->create([
+                'op' => 'add',
+                'path' => '/a/b/c',
+                'value' => 'foo',
+            ]),
+        ]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Not implemented');
+        $deleteService->patch(
+            accountCredentials: $accountCredentials,
+            updates: $updates,
+        );
+    }
+
+    #[Test]
+    public function testSend_Patch(): void
+    {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $deleteService = new DeleteService(
+            httpClient: $mockHttpClient,
+        );
+
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $updateFactory = new UpdateFactory();
+        $updates = new UpdateIterator([
+            $updateFactory->create([
+                'op' => 'add',
+                'path' => '/a/b/c',
+                'value' => 'foo',
+            ]),
+        ]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Not implemented');
+        $deleteService->send(
+            accountCredentials: $accountCredentials,
+            records: $updates,
+            method: 'PATCH',
+        );
     }
 
     /**

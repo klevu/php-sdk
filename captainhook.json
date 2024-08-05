@@ -87,6 +87,11 @@
                         ]
                     }
                 ]
+            },
+            {
+                "action": "vendor/bin/phpunit tests",
+                "options": [],
+                "conditions": []
             }
         ]
     },

@@ -193,6 +193,34 @@ class AccountTest extends TestCase
     }
 
     #[Test]
+    public function testGetSet_IndexingVersion(): void
+    {
+        $account = new Account();
+
+        $this->assertSame('', $account->getIndexingVersion());
+
+        $account->setIndexingVersion('3');
+        $this->assertSame('3', $account->getIndexingVersion());
+
+        $account->setIndexingVersion('');
+        $this->assertSame('', $account->getIndexingVersion());
+    }
+
+    #[Test]
+    public function testGetSet_DefaultCurrency(): void
+    {
+        $account = new Account();
+
+        $this->assertSame('', $account->getDefaultCurrency());
+
+        $account->setDefaultCurrency('GBP');
+        $this->assertSame('GBP', $account->getDefaultCurrency());
+
+        $account->setDefaultCurrency('');
+        $this->assertSame('', $account->getDefaultCurrency());
+    }
+
+    #[Test]
     public function testGetSet_AccountFeatures(): void
     {
         $account = new Account();
@@ -227,6 +255,8 @@ class AccountTest extends TestCase
         $account->setAnalyticsUrl('stats.ksearchnet.com');
         $account->setJsUrl('js.klevu.com');
         $account->setTiersUrl('tiers.klevu.com');
+        $account->setIndexingVersion('2');
+        $account->setDefaultCurrency('USD');
 
         $account->setAccountFeatures(
             new AccountFeatures(
@@ -248,6 +278,8 @@ class AccountTest extends TestCase
             'analyticsUrl' => 'stats.ksearchnet.com',
             'jsUrl' => 'js.klevu.com',
             'tiersUrl' => 'tiers.klevu.com',
+            'indexingVersion' => '2',
+            'defaultCurrency' => 'USD',
         ];
 
         $this->assertEquals(

@@ -14,7 +14,7 @@ namespace Klevu\PhpSDK\Api\Model\Indexing;
  * @api
  * @since 1.0.0
  * @link https://docs.klevu.com/indexing-apis/adding-additionalcustom-attributes-to-a-product
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  */
 interface AttributeInterface
 {

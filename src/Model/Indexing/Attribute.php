@@ -71,6 +71,22 @@ class Attribute implements AttributeInterface
      */
     final public const FIELD_RETURNABLE = 'returnable';
     /**
+     * Key used to reference abbreviate property when converting to/from array
+     *
+     * @see Attribute::toArray()
+     * @see AttributeFactory::create()
+     * @var string
+     */
+    final public const FIELD_ABBREVIATE = 'abbreviate';
+    /**
+     * Key used to reference rangeable property when converting to/from array
+     *
+     * @see Attribute::toArray()
+     * @see AttributeFactory::create()
+     * @var string
+     */
+    final public const FIELD_RANGEABLE = 'rangeable';
+    /**
      * Key used to reference immutable property when converting to/from array
      *
      * @see Attribute::toArray()
@@ -106,6 +122,14 @@ class Attribute implements AttributeInterface
     /**
      * @var bool
      */
+    private bool $abbreviate = false;
+    /**
+     * @var bool
+     */
+    private bool $rangeable = false;
+    /**
+     * @var bool
+     */
     private bool $immutable = false;
 
     /**
@@ -124,6 +148,8 @@ class Attribute implements AttributeInterface
         ?bool $searchable = null,
         ?bool $filterable = null,
         ?bool $returnable = null,
+        ?bool $abbreviate = null,
+        ?bool $rangeable = null,
         ?bool $immutable = null,
     ) {
         $this->attributeName = $attributeName;
@@ -139,6 +165,12 @@ class Attribute implements AttributeInterface
         }
         if (null !== $returnable) {
             $this->setReturnable($returnable);
+        }
+        if (null !== $abbreviate) {
+            $this->setAbbreviate($abbreviate);
+        }
+        if (null !== $rangeable) {
+            $this->setRangeable($rangeable);
         }
         if (null !== $immutable) {
             $this->setImmutable($immutable);
@@ -293,6 +325,56 @@ class Attribute implements AttributeInterface
     /**
      * @return bool
      */
+    public function isAbbreviate(): bool
+    {
+        return $this->abbreviate;
+    }
+
+    /**
+     * Enables / disables the abbreviate flag for this attribute
+     *
+     * @param bool $abbreviate
+     *
+     * @return void
+     * @throws CouldNotUpdateException Where the attribute is marked as immutable
+     */
+    public function setAbbreviate(bool $abbreviate): void
+    {
+        if ($this->isImmutable()) {
+            throw new CouldNotUpdateException('Cannot update abbreviate property of immutable Attribute');
+        }
+
+        $this->abbreviate = $abbreviate;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isRangeable(): bool
+    {
+        return $this->rangeable;
+    }
+
+    /**
+     * Enables / disables the rangeable flag for this attribute
+     *
+     * @param bool $rangeable
+     *
+     * @return void
+     * @throws CouldNotUpdateException Where the attribute is marked as immutable
+     */
+    public function setRangeable(bool $rangeable): void
+    {
+        if ($this->isImmutable()) {
+            throw new CouldNotUpdateException('Cannot update rangeable property of immutable Attribute');
+        }
+
+        $this->rangeable = $rangeable;
+    }
+
+    /**
+     * @return bool
+     */
     public function isImmutable(): bool
     {
         return $this->immutable;
@@ -327,6 +409,8 @@ class Attribute implements AttributeInterface
             self::FIELD_SEARCHABLE => $this->isSearchable(),
             self::FIELD_FILTERABLE => $this->isFilterable(),
             self::FIELD_RETURNABLE => $this->isReturnable(),
+            self::FIELD_ABBREVIATE => $this->isAbbreviate(),
+            self::FIELD_RANGEABLE => $this->isRangeable(),
             self::FIELD_IMMUTABLE => $this->isImmutable(),
         ];
     }

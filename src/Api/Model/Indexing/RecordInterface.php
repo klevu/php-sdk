@@ -14,7 +14,7 @@ namespace Klevu\PhpSDK\Api\Model\Indexing;
  * @api
  * @since 1.0.0
  * @link https://docs.klevu.com/indexing-apis/add-simple-products-in-your-catalog
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  */
 interface RecordInterface
 {
@@ -49,12 +49,18 @@ interface RecordInterface
     public function getAttributes(): array;
 
     /**
-     * Returns array of all attribute name => value pairs to be stored in Klevu's index for
-     *  return with search requests, for example to use in frontend customisations
+     * Returns array of group name => values to be overridden
      *
-     * @return array<string, mixed>|null
+     * @return array<string|int, array<string, mixed>|mixed>|null
      */
-    public function getDisplay(): ?array;
+    public function getGroups(): ?array;
+
+    /**
+     * Returns array of channel name => values to be overridden
+     *
+     * @return array<string|int, array<string, mixed>|mixed>|null
+     */
+    public function getChannels(): ?array;
 
     /**
      * Returns the record data in array format

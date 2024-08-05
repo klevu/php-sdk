@@ -67,6 +67,12 @@ class AccountFactory
         if ($data[Account::FIELD_TIERS_URL] ?? null) {
             $account->setTiersUrl($data[Account::FIELD_TIERS_URL]); // @phpstan-ignore-line We are bubbling the TypeError
         }
+        if ($data[Account::FIELD_INDEXING_VERSION] ?? null) {
+            $account->setIndexingVersion($data[Account::FIELD_INDEXING_VERSION]); // @phpstan-ignore-line We are bubbling the TypeError
+        }
+        if ($data[Account::FIELD_DEFAULT_CURRENCY] ?? null) {
+            $account->setDefaultCurrency($data[Account::FIELD_DEFAULT_CURRENCY]); // @phpstan-ignore-line We are bubbling the TypeError
+        }
         // phpcs:enable Generic.Files.LineLength.TooLong
 
         return $account;

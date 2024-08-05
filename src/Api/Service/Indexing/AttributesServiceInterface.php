@@ -12,6 +12,7 @@ use Klevu\PhpSDK\Api\Model\ApiResponseInterface;
 use Klevu\PhpSDK\Api\Model\Indexing\AttributeInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\Indexing\AttributeIterator;
@@ -22,7 +23,7 @@ use Klevu\PhpSDK\Validator\Indexing\AttributeValidator;
  * Contract for services responsible for managing attributes registered with the Klevu indexing service
  *
  * @link https://docs.klevu.com/indexing-apis/adding-additionalcustom-attributes-to-a-product
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @api
  * @since 1.0.0
  */
@@ -42,6 +43,7 @@ interface AttributesServiceInterface extends ApiServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return AttributeInterface|null Returns null on a valid request where the attribute does not exist
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials or attribute name arguments contain invalid
@@ -61,6 +63,7 @@ interface AttributesServiceInterface extends ApiServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return AttributeIterator
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials contain invalid information and fail internal
@@ -83,6 +86,7 @@ interface AttributesServiceInterface extends ApiServiceInterface
      * @param AttributeInterface $attribute
      *
      * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials or attribute arguments contain invalid
      *       information and fail internal validation. API request is NOT sent
@@ -105,6 +109,7 @@ interface AttributesServiceInterface extends ApiServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials or attribute arguments contain invalid
@@ -127,6 +132,7 @@ interface AttributesServiceInterface extends ApiServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials or attribute name arguments contain invalid

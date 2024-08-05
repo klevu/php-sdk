@@ -8,53 +8,65 @@ declare(strict_types=1);
 
 namespace Klevu\PhpSDK\Provider\Indexing\Batch;
 
-use Klevu\PhpSDK\Api\Model\Indexing\RecordInterface;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
+use Klevu\PhpSDK\Model\IteratorInterface;
+use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProvider\Record;
+use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProvider\Update;
 
 /**
  * Converts collection of Indexing Record objects into JSON format, suitable for sending to
- *  Klevu via API for batch ADD or UPDATE requests
+ *  Klevu via API for batch ADD or UPDATE, or PATCH requests
  *
- * @link https://docs.klevu.com/indexing-apis/api-definition
  * @since 1.0.0
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  */
 class RequestPayloadProvider implements RequestPayloadProviderInterface
 {
     /**
-     * Converts collection of Record objects into JSON string for ADD / UPDATE operations
-     *
-     * @example [{"id":"ABC123", "type":"KLEVU_PRODUCT", "attributes":{"name":{"default":"Example Product"}}}]
-     * @see RecordInterface
-     *
-     * @param RecordIterator $records
-     *
-     * @return string
+     * @var RequestPayloadProviderInterface[]
      */
-    public function get(RecordIterator $records): string
-    {
-        $requestBody = [];
-        /** @var RecordInterface $record */
-        foreach ($records as $record) {
-            $recordData = [
-                'id' => $record->getId(),
-                'type' => $record->getType(),
+    private array $requestPayloadProviders = [];
+
+    /**
+     * @param RequestPayloadProviderInterface[]|null $requestPayloadProviders
+     */
+    public function __construct(
+        ?array $requestPayloadProviders = null,
+    ) {
+        if (null === $requestPayloadProviders) {
+            $requestPayloadProviders = [
+                RecordIterator::class => new Record(),
+                UpdateIterator::class => new Update(),
             ];
+        }
+        array_walk($requestPayloadProviders, [$this, 'addRequestPayloadProvider']);
+    }
 
-            $relations = $record->getRelations();
-            if (null !== $relations) {
-                $recordData['relations'] = $relations;
+    public function get(IteratorInterface $records): string
+    {
+        $return = '';
+        foreach ($this->requestPayloadProviders as $iteratorFqcn => $requestPayloadProvider) {
+            if (!($records instanceof $iteratorFqcn)) {
+                continue;
             }
 
-            $recordData['attributes'] = $record->getAttributes();
-
-            $display = $record->getDisplay();
-            if (null !== $display) {
-                $recordData['display'] = $display;
-            }
-
-            $requestBody[] = $recordData;
+            $return = $requestPayloadProvider->get($records);
         }
 
-        return (string)json_encode($requestBody);
+        return $return;
+    }
+
+    /**
+     * @param RequestPayloadProviderInterface $requestPayloadProvider
+     * @param string $iteratorFqcn
+     *
+     * @return void
+     */
+    private function addRequestPayloadProvider(
+        RequestPayloadProviderInterface $requestPayloadProvider,
+        string $iteratorFqcn,
+    ): void {
+        $this->requestPayloadProviders[$iteratorFqcn] = $requestPayloadProvider;
     }
 }
