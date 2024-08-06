@@ -15,7 +15,7 @@ use Klevu\PhpSDK\Test\Unit\Model\AbstractIteratorTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(EventIterator::class)]
-class EventIteratorTestCaseTest extends AbstractIteratorTestCase
+class EventIteratorTest extends AbstractIteratorTestCase
 {
     /**
      * @var string
@@ -45,6 +45,16 @@ class EventIteratorTestCaseTest extends AbstractIteratorTestCase
                         apikey: 'klevu-9876543210',
                         version: '1.0.0',
                         data: ['wom' => 'bat'],
+                    ),
+                ],
+            ],
+            [
+                [
+                    new Event(
+                        event: EventType::ORDER_PURCHASE,
+                        apikey: 'klevu-1234567890',
+                        version: '1.0.0',
+                        data: ['foo' => 'bar'],
                     ),
                 ],
             ],

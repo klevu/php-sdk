@@ -146,7 +146,13 @@ abstract class AbstractIteratorTestCase extends TestCase
         next($data);
         $iterator->next();
         $this->assertSame(key($data), $iterator->key(), 'Key after next');
-        $this->assertsame(current($data), $iterator->current(), 'Current after next');
+        $this->assertSame(
+            expected: (null === $iterator->key()) // @phpstan-ignore-line
+                ? null // We use null, not false, on out of bounds
+                : current($data),
+            actual: $iterator->current(),
+            message: 'Current after next',
+        );
 
         reset($data);
         $iterator->rewind();

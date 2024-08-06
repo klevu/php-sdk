@@ -14,6 +14,7 @@ use Klevu\PhpSDK\Api\Model\ApiResponseInterface;
 use Klevu\PhpSDK\Api\Service\Account\UpdateStoreFeedUrlServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\ApiResponse;
@@ -169,6 +170,7 @@ class UpdateStoreFeedUrlService implements UpdateStoreFeedUrlServiceInterface
      *
      * @return ApiResponseInterface
      * @throws ValidationException Where provided credentials fail internal validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */

@@ -10,13 +10,14 @@ namespace Klevu\PhpSDK\Provider\Indexing\Batch\Delete;
 
 use Klevu\PhpSDK\Api\Model\Indexing\RecordInterface;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\IteratorInterface;
 use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProviderInterface;
 
 /**
  * Converts collection of Indexing Record objects into JSON format, suitable for sending to
  *  Klevu via API for batch DELETE requests
  *
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  */
 class RequestPayloadProvider implements RequestPayloadProviderInterface
@@ -27,16 +28,20 @@ class RequestPayloadProvider implements RequestPayloadProviderInterface
      * @example {"ids":["ABC123"]}
      * @see RecordInterface
      *
-     * @param RecordIterator $records
+     * @param IteratorInterface $records
      *
      * @return string
      */
-    public function get(RecordIterator $records): string
+    public function get(IteratorInterface $records): string
     {
+        if (!($records instanceof RecordIterator)) {
+            return '';
+        }
+
         $requestBody = [
             'ids' => array_map(
-                static fn (RecordInterface $record): string => $record->getId(),
-                $records->toArray(),
+                callback: static fn (RecordInterface $record): string => $record->getId(),
+                array: $records->toArray(),
             ),
         ];
 

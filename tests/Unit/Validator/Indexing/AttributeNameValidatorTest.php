@@ -85,11 +85,35 @@ class AttributeNameValidatorTest extends TestCase
     }
 
     #[Test]
+    #[TestWith(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   '])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    public function testExecute_InvalidLength(mixed $data): void
+    {
+        $attributeNameValidator = new AttributeNameValidator();
+
+        $this->expectException(InvalidDataValidationException::class);
+        try {
+            $attributeNameValidator->execute($data);
+        } catch (ValidationException $exception) {
+            $errors = $exception->getErrors();
+            $this->assertCount(1, $errors);
+
+            $error = (string)current($errors);
+            $this->assertMatchesRegularExpression(
+                pattern: '/^Attribute Name must be less than or equal to \d+ characters$/',
+                string: $error,
+            );
+            throw $exception;
+        }
+    }
+
+    #[Test]
     #[TestWith(['_foo'])]
     #[TestWith(['foo_'])]
     #[TestWith(['_foo_'])]
     #[TestWith(['product-name'])]
     #[TestWith(['foo!bar'])]
+    #[TestWith(['テスト属性'])]
     public function testExecute_InvalidPattern(mixed $data): void
     {
         $attributeNameValidator = new AttributeNameValidator();

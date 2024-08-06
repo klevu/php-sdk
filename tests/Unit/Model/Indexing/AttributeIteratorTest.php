@@ -48,6 +48,14 @@ class AttributeIteratorTest extends AbstractIteratorTestCase
                     ]),
                 ],
             ],
+            [
+                [
+                    new Attribute(
+                        attributeName: 'testAttribute1',
+                        datatype: DataType::DATETIME->value,
+                    ),
+                ],
+            ],
         ];
     }
 

@@ -39,11 +39,13 @@ trait GenericIteratorTrait
      * Returns the key of the current element
      *
      * @link https://php.net/manual/en/iterator.key.php
-     * @return int
+     * @return int|null
      */
-    public function key(): int
+    public function key(): ?int
     {
-        return $this->position;
+        return array_key_exists($this->position, $this->data)
+            ? $this->position
+            : null;
     }
 
     /**

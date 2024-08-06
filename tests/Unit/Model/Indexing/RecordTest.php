@@ -40,7 +40,7 @@ class RecordTest extends TestCase
         $this->assertSame('KLEVU_PRODUCT', $record->getType());
         $this->assertSame(null, $record->getRelations());
         $this->assertSame([], $record->getAttributes());
-        $this->assertSame(null, $record->getDisplay());
+        $this->assertSame(null, $record->getChannels());
     }
 
     #[Test]
@@ -62,7 +62,7 @@ class RecordTest extends TestCase
                     'default' => 'Foo',
                 ],
             ],
-            display: [
+            channels: [
                 'default' => [
                     'foo' => 'bar',
                 ],
@@ -96,7 +96,7 @@ class RecordTest extends TestCase
                     'foo' => 'bar',
                 ],
             ],
-            actual: $record->getDisplay(),
+            actual: $record->getChannels(),
         );
     }
 
@@ -191,40 +191,98 @@ class RecordTest extends TestCase
     }
 
     #[Test]
-    public function testGetSetAddDisplay(): void
+    public function testGetSetAddGroups(): void
     {
         $record = new Record(
             id: '123-456',
             type: 'KLEVU_PRODUCT',
         );
 
-        $this->assertSame(null, $record->getDisplay());
+        $this->assertSame(null, $record->getGroups());
 
-        $record->addDisplay(
-            attributeName: 'foo',
-            value: 'bar',
+        $record->addGroup(
+            groupName: 'foo',
+            groupData: [
+                'attributes' => [
+                    'bar' => 'baz',
+                ],
+            ],
         );
         $this->assertSame(
             expected: [
-                'foo' => 'bar',
+                'foo' => [
+                    'attributes' => [
+                        'bar' => 'baz',
+                    ],
+                ],
             ],
-            actual: $record->getDisplay(),
+            actual: $record->getGroups(),
         );
 
-        $record->setDisplay([
+        $record->setGroups([
             'wom' => [
-                'default' => 'bat',
-                'additionalProp1' => 'baz',
+                'attributes' => [
+                    'foo' => [],
+                ],
             ],
         ]);
         $this->assertSame(
             expected: [
                 'wom' => [
-                    'default' => 'bat',
-                    'additionalProp1' => 'baz',
+                    'attributes' => [
+                        'foo' => [],
+                    ],
                 ],
             ],
-            actual: $record->getDisplay(),
+            actual: $record->getGroups(),
+        );
+    }
+
+    #[Test]
+    public function testGetSetAddChannels(): void
+    {
+        $record = new Record(
+            id: '123-456',
+            type: 'KLEVU_PRODUCT',
+        );
+
+        $this->assertSame(null, $record->getChannels());
+
+        $record->addChannel(
+            channelName: 'foo',
+            channelData: [
+                'attributes' => [
+                    'bar' => 'baz',
+                ],
+            ],
+        );
+        $this->assertSame(
+            expected: [
+                'foo' => [
+                    'attributes' => [
+                        'bar' => 'baz',
+                    ],
+                ],
+            ],
+            actual: $record->getChannels(),
+        );
+
+        $record->setChannels([
+            'wom' => [
+                'groups' => [
+                    'foo' => [],
+                ],
+            ],
+        ]);
+        $this->assertSame(
+            expected: [
+                'wom' => [
+                    'groups' => [
+                        'foo' => [],
+                    ],
+                ],
+            ],
+            actual: $record->getChannels(),
         );
     }
 
@@ -247,9 +305,27 @@ class RecordTest extends TestCase
                     'default' => 'Foo',
                 ],
             ],
-            display: [
+            groups: [
+                'fr_FR' => [
+                    'attributes' => [
+                        'wom' => 'bat',
+                    ],
+                ],
+            ],
+            channels: [
                 'default' => [
-                    'foo' => 'bar',
+                    'attributes' => [
+                        'foo' => 'bar',
+                    ],
+                    'groups' => [
+                        'fr_FR' => [
+                            'attributes' => [
+                                'wom' => [
+                                    'default' => 'bat',
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ],
         );
@@ -271,9 +347,27 @@ class RecordTest extends TestCase
                         'default' => 'Foo',
                     ],
                 ],
-                'display' => [
+                'groups' => [
+                    'fr_FR' => [
+                        'attributes' => [
+                            'wom' => 'bat',
+                        ],
+                    ],
+                ],
+                'channels' => [
                     'default' => [
-                        'foo' => 'bar',
+                        'attributes' => [
+                            'foo' => 'bar',
+                        ],
+                        'groups' => [
+                            'fr_FR' => [
+                                'attributes' => [
+                                    'wom' => [
+                                        'default' => 'bat',
+                                    ],
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],

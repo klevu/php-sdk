@@ -35,6 +35,10 @@ enum DataType: string
      */
     case MULTIVALUE = 'MULTIVALUE';
     /**
+     * Array of integer or float values
+     */
+    case MULTIVALUE_NUMBER = 'MULTIVALUE_NUMBER';
+    /**
      * A valid JSON encoded value
      */
     case JSON = 'JSON';
@@ -59,9 +63,10 @@ enum DataType: string
     public function isAvailableToCustomAttributes(): bool
     {
         return match ($this) {
-            DataType::STRING, DataType::MULTIVALUE => true,
+            DataType::STRING, DataType::MULTIVALUE,
+            DataType::NUMBER, DataType::MULTIVALUE_NUMBER => true,
             // Future support
-            DataType::NUMBER, DataType::DATETIME,
+            DataType::DATETIME,
             // Core attributes only
             DataType::JSON, DataType::BOOLEAN => false,
         };

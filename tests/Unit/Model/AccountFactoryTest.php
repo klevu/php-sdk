@@ -38,6 +38,8 @@ class AccountFactoryTest extends TestCase
             'analyticsUrl' => 'custom-stats.klevu.com',
             'jsUrl' => 'custom-js.klevu.com',
             'tiersUrl' => 'custom-tiers.klevu.com',
+            'indexingVersion' => '2',
+            'defaultCurrency' => 'EUR',
         ]);
 
         $this->assertSame('klevu-1234567890', $account->getJsApiKey());
@@ -52,6 +54,8 @@ class AccountFactoryTest extends TestCase
         $this->assertSame('custom-stats.klevu.com', $account->getAnalyticsUrl());
         $this->assertSame('custom-js.klevu.com', $account->getJsUrl());
         $this->assertSame('custom-tiers.klevu.com', $account->getTiersUrl());
+        $this->assertSame('2', $account->getIndexingVersion());
+        $this->assertSame('EUR', $account->getDefaultCurrency());
         $this->assertFalse($account->getAccountFeatures()->smartCategoryMerchandising);
         $this->assertFalse($account->getAccountFeatures()->smartRecommendations);
     }
@@ -82,6 +86,8 @@ class AccountFactoryTest extends TestCase
         $this->assertSame('custom-stats.klevu.com', $account->getAnalyticsUrl());
         $this->assertSame('custom-js.klevu.com', $account->getJsUrl());
         $this->assertNull($account->getTiersUrl());
+        $this->assertSame('', $account->getIndexingVersion());
+        $this->assertSame('', $account->getDefaultCurrency());
         $this->assertFalse($account->getAccountFeatures()->smartCategoryMerchandising);
         $this->assertFalse($account->getAccountFeatures()->smartRecommendations);
     }
@@ -100,6 +106,7 @@ class AccountFactoryTest extends TestCase
             'catNavUrl' => 'cn123.ksearchnet.com', // Invalid key
             'analyticsUrl' => 'custom-stats.klevu.com',
             'jsUrl' => 'custom-js.klevu.com',
+            'defaultCurrency' => 'CAD',
             'accountFeatures.smartCategoryMerchandising' => true, // This is not supported
             'foo' => 'bar', // Unrecognised key
         ]);
@@ -116,6 +123,8 @@ class AccountFactoryTest extends TestCase
         $this->assertSame('custom-stats.klevu.com', $account->getAnalyticsUrl());
         $this->assertSame('custom-js.klevu.com', $account->getJsUrl());
         $this->assertNull($account->getTiersUrl());
+        $this->assertSame('', $account->getIndexingVersion());
+        $this->assertSame('CAD', $account->getDefaultCurrency());
         $this->assertFalse($account->getAccountFeatures()->smartCategoryMerchandising);
         $this->assertFalse($account->getAccountFeatures()->smartRecommendations);
     }

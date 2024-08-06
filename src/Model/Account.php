@@ -120,6 +120,22 @@ class Account implements AccountInterface
      * @var string
      */
     final public const FIELD_TIERS_URL = 'tiersUrl';
+    /**
+     * Key used to reference indexingVersion property when converting to/from array
+     *
+     * @see Account::toArray()
+     * @see AccountFactory::create()
+     * @var string
+     */
+    final public const FIELD_INDEXING_VERSION = 'indexingVersion';
+    /**
+     * Key used to reference defaultCurrency property when converting to/from array
+     *
+     * @see Account::toArray()
+     * @see AccountFactory::create()
+     * @var string
+     */
+    final public const FIELD_DEFAULT_CURRENCY = 'defaultCurrency';
 
     /**
      * @var string|null
@@ -169,6 +185,14 @@ class Account implements AccountInterface
      * @var string|null
      */
     private ?string $tiersUrl = null;
+    /**
+     * @var string
+     */
+    private string $indexingVersion = '';
+    /**
+     * @var string
+     */
+    private string $defaultCurrency = '';
     /**
      * @var AccountFeatures|null
      */
@@ -391,6 +415,42 @@ class Account implements AccountInterface
     }
 
     /**
+     * @return string
+     */
+    public function getIndexingVersion(): string
+    {
+        return $this->indexingVersion;
+    }
+
+    /**
+     * @param string $indexingVersion
+     *
+     * @return void
+     */
+    public function setIndexingVersion(string $indexingVersion): void
+    {
+        $this->indexingVersion = $indexingVersion;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDefaultCurrency(): string
+    {
+        return $this->defaultCurrency;
+    }
+
+    /**
+     * @param string $defaultCurrency
+     *
+     * @return void
+     */
+    public function setDefaultCurrency(string $defaultCurrency): void
+    {
+        $this->defaultCurrency = $defaultCurrency;
+    }
+
+    /**
      * @return AccountFeatures
      */
     public function getAccountFeatures(): AccountFeatures
@@ -426,6 +486,8 @@ class Account implements AccountInterface
             self::FIELD_ANALYTICS_URL => $this->getAnalyticsUrl(),
             self::FIELD_JS_URL => $this->getJsUrl(),
             self::FIELD_TIERS_URL => $this->getTiersUrl(),
+            self::FIELD_INDEXING_VERSION => $this->getIndexingVersion(),
+            self::FIELD_DEFAULT_CURRENCY => $this->getDefaultCurrency(),
         ];
     }
 }

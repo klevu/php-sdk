@@ -11,6 +11,7 @@ namespace Klevu\PhpSDK\Api\Service\Account;
 use Klevu\PhpSDK\Api\Model\ApiResponseInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Service\ApiServiceInterface;
@@ -56,6 +57,7 @@ interface UpdateStoreFeedUrlServiceInterface extends ApiServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where one or more provided arguments contain invalid information and fail

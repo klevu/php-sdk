@@ -44,6 +44,8 @@ class AttributeTest extends TestCase
         $this->assertTrue($attribute->isSearchable());
         $this->assertTrue($attribute->isFilterable());
         $this->assertTrue($attribute->isReturnable());
+        $this->assertFalse($attribute->isAbbreviate());
+        $this->assertFalse($attribute->isRangeable());
         $this->assertFalse($attribute->isImmutable());
     }
 
@@ -59,6 +61,8 @@ class AttributeTest extends TestCase
             searchable: false,
             filterable: false,
             returnable: false,
+            abbreviate: true,
+            rangeable: true,
             immutable: true,
         );
 
@@ -73,6 +77,8 @@ class AttributeTest extends TestCase
         $this->assertFalse($attribute->isSearchable());
         $this->assertFalse($attribute->isFilterable());
         $this->assertFalse($attribute->isReturnable());
+        $this->assertTrue($attribute->isAbbreviate());
+        $this->assertTrue($attribute->isRangeable());
         $this->assertTrue($attribute->isImmutable());
     }
 
@@ -215,6 +221,64 @@ class AttributeTest extends TestCase
         $attribute->setReturnable(false);
     }
 
+    #[Test]
+    public function testGetSetAbbreviate(): void
+    {
+        $attribute = new Attribute(
+            attributeName: 'test_attribute',
+            datatype: DataType::STRING->value,
+        );
+
+        $this->assertFalse($attribute->isAbbreviate());
+
+        $attribute->setAbbreviate(true);
+        $this->assertTrue($attribute->isAbbreviate());
+    }
+
+    #[Test]
+    public function testGetSetAbbreviate_Immutable(): void
+    {
+        $attribute = new Attribute(
+            attributeName: 'test_attribute',
+            datatype: DataType::STRING->value,
+            immutable: true,
+        );
+
+        $this->assertFalse($attribute->isAbbreviate());
+
+        $this->expectException(CouldNotUpdateException::class);
+        $attribute->setAbbreviate(true);
+    }
+
+    #[Test]
+    public function testGetSetRangeable(): void
+    {
+        $attribute = new Attribute(
+            attributeName: 'test_attribute',
+            datatype: DataType::STRING->value,
+        );
+
+        $this->assertFalse($attribute->isRangeable());
+
+        $attribute->setRangeable(true);
+        $this->assertTrue($attribute->isRangeable());
+    }
+
+    #[Test]
+    public function testGetSetRangeable_Immutable(): void
+    {
+        $attribute = new Attribute(
+            attributeName: 'test_attribute',
+            datatype: DataType::STRING->value,
+            immutable: true,
+        );
+
+        $this->assertFalse($attribute->isRangeable());
+
+        $this->expectException(CouldNotUpdateException::class);
+        $attribute->setRangeable(true);
+    }
+
     public function testGetSetImmutable(): void
     {
         $attribute = new Attribute(
@@ -274,6 +338,12 @@ class AttributeTest extends TestCase
 
         $attribute->setReturnable(false);
         $this->assertFalse($attribute->isReturnable());
+
+        $attribute->setAbbreviate(true);
+        $this->assertTrue($attribute->isAbbreviate());
+
+        $attribute->setRangeable(true);
+        $this->assertTrue($attribute->isRangeable());
     }
 
     #[Test]
@@ -290,6 +360,8 @@ class AttributeTest extends TestCase
         $attribute->setSearchable(false);
         $attribute->setFilterable(false);
         $attribute->setReturnable(false);
+        $attribute->setAbbreviate(true);
+        $attribute->setRangeable(true);
         $attribute->setImmutable(true);
 
         $this->assertSame(
@@ -303,6 +375,8 @@ class AttributeTest extends TestCase
                 Attribute::FIELD_SEARCHABLE => false,
                 Attribute::FIELD_FILTERABLE => false,
                 Attribute::FIELD_RETURNABLE => false,
+                Attribute::FIELD_ABBREVIATE => true,
+                Attribute::FIELD_RANGEABLE => true,
                 Attribute::FIELD_IMMUTABLE => true,
             ],
             actual: $attribute->toArray(),

@@ -20,6 +20,10 @@ use Klevu\PhpSDK\Validator\ValidatorInterface;
 class AttributeNameValidator implements ValidatorInterface
 {
     /**
+     * Maximum length supported by Klevu API for an attribute name
+     */
+    final public const ATTRIBUTE_NAME_MAXLENGTH = 200;
+    /**
      * (?!_): Negative lookahead to ensure that the string does not start with an underscore.
      * (?!.*_$): Negative lookahead to ensure that the string does not end with an underscore.
      * [a-zA-Z0-9_]+: Matches one or more alphanumeric characters or underscores.
@@ -35,7 +39,8 @@ class AttributeNameValidator implements ValidatorInterface
      *
      * @return void
      * @throws InvalidTypeValidationException Where a data type other than string is passed
-     * @throws InvalidDataValidationException Where the passed data is empty or contains unsupported characters
+     * @throws InvalidDataValidationException Where the passed data is empty, too long,
+     *                                          or contains unsupported characters
      */
     public function execute(mixed $data): void
     {
@@ -43,6 +48,7 @@ class AttributeNameValidator implements ValidatorInterface
         /** @var string|null $data */
         $this->validateNotEmpty($data);
         /** @var string $data */
+        $this->validateExpectedLength($data);
         $this->validateMatchesExpectedFormat($data);
     }
 
@@ -54,6 +60,8 @@ class AttributeNameValidator implements ValidatorInterface
      */
     private function validateType(mixed $data): void
     {
+        // We include null here as it is more user-friendly to report the
+        //  not-empty error, rather than an invalid type for null
         if (null !== $data && !is_string($data)) {
             throw new InvalidTypeValidationException(
                 errors: [
@@ -78,6 +86,26 @@ class AttributeNameValidator implements ValidatorInterface
             throw new InvalidDataValidationException(
                 errors: [
                     'Attribute Name is required',
+                ],
+            );
+        }
+    }
+
+    /**
+     * @param string $data
+     *
+     * @return void
+     * @throws InvalidDataValidationException
+     */
+    private function validateExpectedLength(string $data): void
+    {
+        if (strlen($data) > self::ATTRIBUTE_NAME_MAXLENGTH) {
+            throw new InvalidDataValidationException(
+                errors: [
+                    sprintf(
+                        'Attribute Name must be less than or equal to %d characters',
+                        self::ATTRIBUTE_NAME_MAXLENGTH,
+                    ),
                 ],
             );
         }

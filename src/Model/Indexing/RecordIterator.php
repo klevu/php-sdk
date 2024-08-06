@@ -50,11 +50,11 @@ class RecordIterator implements IteratorInterface
      * Returns the current record
      *
      * @link https://php.net/manual/en/iterator.current.php
-     * @return RecordInterface
+     * @return RecordInterface|null
      */
-    public function current(): RecordInterface
+    public function current(): ?RecordInterface
     {
-        return $this->data[$this->key()];
+        return $this->data[$this->key()] ?? null;
     }
 
     /**

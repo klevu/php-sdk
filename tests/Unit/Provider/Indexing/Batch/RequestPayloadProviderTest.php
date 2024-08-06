@@ -8,8 +8,12 @@ declare(strict_types=1);
 
 namespace Klevu\PhpSDK\Test\Unit\Provider\Indexing\Batch;
 
-use Klevu\PhpSDK\Model\Indexing\Record;
+use Klevu\PhpSDK\Model\Indexing\Record as RecordModel;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateFactory;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateOperations;
+use Klevu\PhpSDK\Model\IteratorInterface;
 use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProvider;
 use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProviderInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,78 +40,100 @@ class RequestPayloadProviderTest extends TestCase
      */
     public static function dataProvider_testGet(): array
     {
+        $updateFactory = new UpdateFactory();
+
         return [
             [
                 new RecordIterator([
-                    new Record(
-                        id: '123-456',
-                        type: 'KLEVU_PRODUCT_RETURN_PARENT',
-                        relations: [
-                            'categories' => [
-                                'type' => 'KLEVU_CATEGORY',
-                                'values' => [
-                                    'category_1',
-                                ],
-                            ],
-                            'parentProduct' => [
-                                'type' => 'KLEVU_PRODUCT',
-                                'values' => [
-                                    '123',
-                                ],
-                            ],
-                        ],
-                        attributes: [
-                            'sku' => 'Test Child',
-                        ],
-                    ),
-                    new Record(
+                    new RecordModel(
                         id: 'category_1',
                         type: 'KLEVU_CATEGORY',
                     ),
-                    new Record(
-                        id: '123',
-                        type: 'KLEVU_PRODUCT',
-                        display: [
-                            'default' => [
-                                'name' => 'Parent Product',
-                            ],
-                        ],
-                    ),
                 ]),
                 json_encode([
-                    [
-                        'id' => '123-456',
-                        'type' => 'KLEVU_PRODUCT_RETURN_PARENT',
-                        'relations' => [
-                            'categories' => [
-                                'type' => 'KLEVU_CATEGORY',
-                                'values' => [
-                                    'category_1',
-                                ],
-                            ],
-                            'parentProduct' => [
-                                'type' => 'KLEVU_PRODUCT',
-                                'values' => [
-                                    '123',
-                                ],
-                            ],
-                        ],
-                        'attributes' => [
-                            'sku' => 'Test Child',
-                        ],
-                    ],
                     [
                         'id' => 'category_1',
                         'type' => 'KLEVU_CATEGORY',
                         'attributes' => [],
                     ],
-                    [
-                        'id' => '123',
-                        'type' => 'KLEVU_PRODUCT',
-                        'attributes' => [],
-                        'display' => [
-                            'default' => [
-                                'name' => 'Parent Product',
+                ]),
+            ],
+            [
+                new UpdateIterator([
+                    $updateFactory->create([
+                        'record_id' => 'PRODUCT001',
+                        'op' => 'add',
+                        'path' => '/foo/bar',
+                        'value' => 'baz',
+                    ]),
+                ]),
+                json_encode([
+                    'PRODUCT001' => [
+                        [
+                            'op' => 'add',
+                            'path' => '/foo/bar',
+                            'value' => 'baz',
+                        ],
+                    ],
+                ]),
+            ],
+            [
+                new UpdateIterator([
+                    $updateFactory->create([
+                        'record_id' => 'PRODUCT001',
+                        'op' => UpdateOperations::REMOVE,
+                        'path' => '/foo/bar',
+                        'value' => null,
+                    ]),
+                    $updateFactory->create([
+                        'record_id' => 'PRODUCT003',
+                        'op' => UpdateOperations::ADD,
+                        'path' => '/',
+                        'value' => [
+                            'wom' => 'bat',
+                            'a' => [
+                                'b' => [
+                                    'c',
+                                ],
+                            ],
+                        ],
+                    ]),
+                    $updateFactory->create([
+                        'record_id' => 'PRODUCT001',
+                        'value' => false,
+                        'op' => UpdateOperations::REPLACE,
+                        'path' => '/a/b/c',
+                    ]),
+                    $updateFactory->create([
+                        'record_id' => 'PRODUCT002',
+                        'op' => '',
+                        'path' => '@1234',
+                        'value' => 'foo',
+                    ]),
+                ]),
+                json_encode([
+                    'PRODUCT001' => [
+                        [
+                            'op' => 'remove',
+                            'path' => '/foo/bar',
+                        ],
+                        [
+                            'op' => 'replace',
+                            'path' => '/a/b/c',
+                            'value' => false,
+                        ],
+                    ],
+                    'PRODUCT003' => [
+                        [
+                            'op' => 'add',
+                            'path' => '/',
+                            'value' => [
+                                'wom' => 'bat',
+                                'a' => [
+                                    'b' => [
+                                        'c',
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -119,7 +145,7 @@ class RequestPayloadProviderTest extends TestCase
     #[Test]
     #[DataProvider('dataProvider_testGet')]
     public function testGet(
-        RecordIterator $records,
+        IteratorInterface $records,
         string $expectedResult,
     ): void {
         $requestPayloadProvider = new RequestPayloadProvider();
@@ -129,6 +155,82 @@ class RequestPayloadProviderTest extends TestCase
         $this->assertSame(
             expected: $expectedResult,
             actual: $result,
+        );
+    }
+
+    #[Test]
+    public function testGet_ConstructorArgs_Record(): void
+    {
+        $fixtures = new RecordIterator([
+            new RecordModel(
+                id: 'category_1',
+                type: 'KLEVU_CATEGORY',
+            ),
+        ]);
+
+        $mockRecordRequestPayloadProvider = $this->getMockBuilder(RequestPayloadProviderInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mockRecordRequestPayloadProvider->expects($this->once())
+            ->method('get')
+            ->with($fixtures)
+            ->willReturn('[]');
+
+        $mockUpdateRequestPayloadProvider = $this->getMockBuilder(RequestPayloadProviderInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mockUpdateRequestPayloadProvider->expects($this->never())
+            ->method('get');
+
+        $requestPayloadProvider = new RequestPayloadProvider(
+            requestPayloadProviders: [
+                RecordIterator::class => $mockRecordRequestPayloadProvider,
+                UpdateIterator::class => $mockUpdateRequestPayloadProvider,
+            ],
+        );
+
+        $this->assertSame(
+            expected: '[]',
+            actual: $requestPayloadProvider->get($fixtures),
+        );
+    }
+
+    #[Test]
+    public function testGet_ConstructorArgs_Update(): void
+    {
+        $updateFactory = new UpdateFactory();
+        $fixtures = new UpdateIterator([
+            $updateFactory->create([
+                'op' => 'add',
+                'path' => '/foo/bar',
+                'value' => 'baz',
+            ]),
+        ]);
+
+        $mockRecordRequestPayloadProvider = $this->getMockBuilder(RequestPayloadProviderInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mockRecordRequestPayloadProvider->expects($this->never())
+            ->method('get');
+
+        $mockUpdateRequestPayloadProvider = $this->getMockBuilder(RequestPayloadProviderInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mockUpdateRequestPayloadProvider->expects($this->once())
+            ->method('get')
+            ->with($fixtures)
+            ->willReturn('[]');
+
+        $requestPayloadProvider = new RequestPayloadProvider(
+            requestPayloadProviders: [
+                RecordIterator::class => $mockRecordRequestPayloadProvider,
+                UpdateIterator::class => $mockUpdateRequestPayloadProvider,
+            ],
+        );
+
+        $this->assertSame(
+            expected: '[]',
+            actual: $requestPayloadProvider->get($fixtures),
         );
     }
 }

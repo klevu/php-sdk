@@ -45,8 +45,16 @@ class RecordIteratorTest extends AbstractIteratorTestCase
                         'type' => 'KLEVU_PRODUCT',
                         'relations' => null,
                         'attributes' => [],
-                        'display' => null,
+                        'channels' => null,
                     ]),
+                ],
+            ],
+            [
+                [
+                    new Record(
+                        id: '12345',
+                        type: 'KLEVU_PRODUCT',
+                    ),
                 ],
             ],
             [
@@ -67,7 +75,7 @@ class RecordIteratorTest extends AbstractIteratorTestCase
                                 'default' => 'Foo',
                             ],
                         ],
-                        display: [
+                        channels: [
                             'default' => [
                                 'foo' => 'bar',
                             ],
@@ -89,7 +97,7 @@ class RecordIteratorTest extends AbstractIteratorTestCase
                                 'default' => 'Foo',
                             ],
                         ],
-                        'display' => [
+                        'channels' => [
                             'default' => [
                                 'foo' => 'bar',
                             ],

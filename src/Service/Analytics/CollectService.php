@@ -14,6 +14,9 @@ use Klevu\PhpSDK\Api\Model\ApiResponseInterface;
 use Klevu\PhpSDK\Api\Service\Analytics\CollectServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\Api\JsonExceptionFactory;
+use Klevu\PhpSDK\Exception\ApiExceptionFactoryInterface;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\Analytics\Collect\Event;
 use Klevu\PhpSDK\Model\Analytics\Collect\EventIterator;
@@ -67,6 +70,10 @@ class CollectService implements CollectServiceInterface
      * @var UserAgentProviderInterface
      */
     private readonly UserAgentProviderInterface $userAgentProvider;
+    /**
+     * @var ApiExceptionFactoryInterface
+     */
+    private readonly ApiExceptionFactoryInterface $apiExceptionFactory;
 
     /**
      * @uses Psr18ClientDiscovery::find()
@@ -82,6 +89,8 @@ class CollectService implements CollectServiceInterface
      *      If null, a new instance of {@see UserAgentProvider} is used
      * @param BaseUrlsProviderInterface|null $baseUrlsProvider
      *      If null, a new instance of {@see BaseUrlsProvider} is used
+     * @param ApiExceptionFactoryInterface|null $apiExceptionFactory
+     *        If null, a new instance of {@see JsonExceptionFactory} is used
      *
      * @throws NotFoundException Where httpClient is not provided and no PSR-18 compatible ClientInterface
      *      can be automagically discovered
@@ -94,6 +103,7 @@ class CollectService implements CollectServiceInterface
         ?RequestFactoryInterface $requestFactory = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?UserAgentProviderInterface $userAgentProvider = null,
+        ?ApiExceptionFactoryInterface $apiExceptionFactory = null,
     ) {
         $this->baseUrlsProvider = $baseUrlsProvider ?: new BaseUrlsProvider();
         $this->httpClient = $httpClient ?: Psr18ClientDiscovery::find();
@@ -102,6 +112,9 @@ class CollectService implements CollectServiceInterface
         $this->requestFactory = $requestFactory;
         $this->responseFactory = $responseFactory;
         $this->userAgentProvider = $userAgentProvider ?: new UserAgentProvider();
+        $this->apiExceptionFactory = $apiExceptionFactory ?: new JsonExceptionFactory(
+            requireValidJsonBody: false,
+        );
     }
 
     /**
@@ -139,6 +152,7 @@ class CollectService implements CollectServiceInterface
      * @return ApiResponseInterface
      * @throws ValidationException Where one or more provided events contain invalid information and fail internal
      *       validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */
@@ -238,26 +252,29 @@ class CollectService implements CollectServiceInterface
      * @param string $responseBody
      *
      * @return void
+     * @throws ApiExceptionInterface
      * @throws BadResponseException
      * @throws BadRequestException
      */
     // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
-    private function checkResponse(int $responseCode, string $responseBody): void
-    {
-        if (200 === $responseCode) {
-            return;
-        }
-
-        if (404 === $responseCode || 499 <= $responseCode) {
+    private function checkResponse(
+        int $responseCode,
+        string $responseBody,
+    ): void {
+        if (404 === $responseCode) {
             throw new BadResponseException(
-                message: 'Unexpected Response Code ' . $responseCode,
+                message: 'Unexpected Response Code [404]',
                 code: $responseCode,
             );
         }
 
-        throw new BadRequestException(
-            message: 'API request rejected by Klevu API',
-            code: $responseCode,
+        $responseException = $this->apiExceptionFactory->createFromResponse(
+            responseCode: $responseCode,
+            responseBody: $responseBody,
         );
+
+        if ($responseException) {
+            throw $responseException;
+        }
     }
 }

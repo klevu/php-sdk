@@ -70,6 +70,13 @@ class AttributeValidatorTest extends TestCase
     #[Test]
     #[TestWith([''])]
     #[TestWith([' '])]
+    #[TestWith(['_foo'])]
+    #[TestWith(['foo_'])]
+    #[TestWith(['_foo_'])]
+    #[TestWith(['foo!bar'])]
+    #[TestWith(['テスト属性'])]
+    #[TestWith(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa    '])] // phpcs:ignore Generic.Files.LineLength.TooLong
     public function testExecute_InvalidAttributeName(string $data): void
     {
         $attributeValidator = new AttributeValidator();
@@ -230,7 +237,6 @@ class AttributeValidatorTest extends TestCase
     }
 
     #[Test]
-    #[TestWith(['NUMBER'])]
     #[TestWith(['DATETIME'])]
     #[TestWith(['JSON'])]
     #[TestWith(['BOOLEAN'])]
@@ -297,6 +303,27 @@ class AttributeValidatorTest extends TestCase
                 ],
                 searchable: false,
                 filterable: false,
+                returnable: false,
+            ),
+            new Attribute(
+                attributeName: 'test_attribute',
+                datatype: 'NUMBER',
+                label: [
+                    'default' => 'Test',
+                ],
+                searchable: false,
+                filterable: false,
+                returnable: false,
+            ),
+            new Attribute(
+                attributeName: 'test_attribute',
+                datatype: 'MULTIVALUE_NUMBER',
+                label: [
+                    'default' => 'Test',
+                ],
+                searchable: false,
+                filterable: false,
+                rangeable: true,
                 returnable: false,
             ),
         ];

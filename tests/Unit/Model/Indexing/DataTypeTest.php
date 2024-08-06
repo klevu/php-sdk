@@ -21,9 +21,10 @@ class DataTypeTest extends TestCase
     {
         $this->assertTrue(DataType::STRING->isAvailableToCustomAttributes());
         $this->assertTrue(DataType::MULTIVALUE->isAvailableToCustomAttributes());
+        $this->assertTrue(DataType::NUMBER->isAvailableToCustomAttributes());
+        $this->assertTrue(DataType::MULTIVALUE_NUMBER->isAvailableToCustomAttributes());
         // Future support
         $this->assertFalse(DataType::DATETIME->isAvailableToCustomAttributes());
-        $this->assertFalse(DataType::NUMBER->isAvailableToCustomAttributes());
         // Core only
         $this->assertFalse(DataType::JSON->isAvailableToCustomAttributes());
         $this->assertFalse(DataType::BOOLEAN->isAvailableToCustomAttributes());

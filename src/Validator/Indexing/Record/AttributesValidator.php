@@ -17,7 +17,7 @@ use Klevu\PhpSDK\Validator\ValidatorInterface;
 /**
  * Composite validator to test that a Record's "attributes" value is valid for indexing
  *
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  */
 class AttributesValidator implements ValidatorInterface

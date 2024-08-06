@@ -12,15 +12,22 @@ use Http\Discovery\Exception\NotFoundException;
 use Http\Discovery\Psr18ClientDiscovery;
 use Klevu\PhpSDK\Api\Model\ApiResponseInterface;
 use Klevu\PhpSDK\Api\Model\Indexing\RecordInterface;
+use Klevu\PhpSDK\Api\Model\Indexing\UpdateInterface;
 use Klevu\PhpSDK\Api\Service\Indexing\BatchServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\Api\JsonExceptionFactory;
+use Klevu\PhpSDK\Exception\ApiExceptionFactoryInterface;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\Validation\InvalidDataValidationException;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\ApiResponse;
+use Klevu\PhpSDK\Model\HttpMethods;
 use Klevu\PhpSDK\Model\Indexing\AuthAlgorithms;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
+use Klevu\PhpSDK\Model\IteratorInterface;
 use Klevu\PhpSDK\Provider\BaseUrlsProvider;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProvider;
@@ -35,6 +42,7 @@ use Klevu\PhpSDK\Traits\MaskSensitiveDataTrait;
 use Klevu\PhpSDK\Traits\Psr17FactoryTrait;
 use Klevu\PhpSDK\Validator\AccountCredentialsValidator;
 use Klevu\PhpSDK\Validator\Indexing\RecordValidator;
+use Klevu\PhpSDK\Validator\Indexing\UpdateValidator;
 use Klevu\PhpSDK\Validator\ValidatorInterface;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
@@ -49,7 +57,7 @@ use Psr\Log\LoggerInterface;
  * Service class responsible for adding and updating records in Klevu's index
  *
  * @link https://docs.klevu.com/indexing-apis/how-to-do-with-examples
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  * @uses RequestPayloadProvider
  */
@@ -76,9 +84,9 @@ class BatchService implements BatchServiceInterface
      */
     private readonly ValidatorInterface $accountCredentialsValidator;
     /**
-     * @var ValidatorInterface
+     * @var ValidatorInterface[]
      */
-    private readonly ValidatorInterface $recordValidator;
+    private array $recordValidators = [];
     /**
      * @var RequestBearerTokenProviderInterface
      */
@@ -91,6 +99,10 @@ class BatchService implements BatchServiceInterface
      * @var UserAgentProviderInterface
      */
     private readonly UserAgentProviderInterface $userAgentProvider;
+    /**
+     * @var ApiExceptionFactoryInterface
+     */
+    private readonly ApiExceptionFactoryInterface $apiExceptionFactory;
     /**
      * @var AuthAlgorithms
      */
@@ -114,8 +126,8 @@ class BatchService implements BatchServiceInterface
      * @param LoggerInterface|null $logger
      * @param ValidatorInterface|null $accountCredentialsValidator
      *      If null, a new instance of {@see AccountCredentialsValidator} is used
-     * @param ValidatorInterface|null $recordValidator
-     *      If null, a new instance of {@see RecordValidator} is used
+     * @param ValidatorInterface[]|null $recordValidators
+     *       If null, a new array containing instances of {@see RecordValidator}, {@see UpdateValidator} will be created
      * @param RequestBearerTokenProviderInterface|null $requestBearerTokenProvider
      *      If null, a new instance of {@see RequestBearerTokenProvider} is created using this class' logger
      *          and accountCredentialsValidator properties
@@ -125,6 +137,8 @@ class BatchService implements BatchServiceInterface
      * @param ResponseFactoryInterface|null $responseFactory
      * @param UserAgentProviderInterface|null $userAgentProvider
      *      If null, a new instance of {@see UserAgentProvider} is used
+     * @param ApiExceptionFactoryInterface|null $apiExceptionFactory
+     *        If null, a new instance of {@see JsonExceptionFactory} is used
      * @param AuthAlgorithms $authAlgorithm
      * @param InvalidRecordMode $invalidRecordMode
      * @param int $maxBatchSize
@@ -137,12 +151,13 @@ class BatchService implements BatchServiceInterface
         ?ClientInterface $httpClient = null,
         ?LoggerInterface $logger = null,
         ?ValidatorInterface $accountCredentialsValidator = null,
-        ?ValidatorInterface $recordValidator = null,
+        ?array $recordValidators = null,
         ?RequestBearerTokenProviderInterface $requestBearerTokenProvider = null,
         ?RequestPayloadProviderInterface $requestPayloadProvider = null,
         ?RequestFactoryInterface $requestFactory = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?UserAgentProviderInterface $userAgentProvider = null,
+        ?ApiExceptionFactoryInterface $apiExceptionFactory = null,
         AuthAlgorithms $authAlgorithm = AuthAlgorithms::HMAC_SHA384,
         InvalidRecordMode $invalidRecordMode = InvalidRecordMode::SKIP,
         int $maxBatchSize = 250,
@@ -151,7 +166,15 @@ class BatchService implements BatchServiceInterface
         $this->httpClient = $httpClient ?: Psr18ClientDiscovery::find();
         $this->logger = $logger;
         $this->accountCredentialsValidator = $accountCredentialsValidator ?: new AccountCredentialsValidator();
-        $this->recordValidator = $recordValidator ?: new RecordValidator();
+
+        if (null === $recordValidators) {
+            $recordValidators = [
+                RecordInterface::class => new RecordValidator(),
+                UpdateInterface::class => new UpdateValidator(),
+            ];
+        }
+        array_walk($recordValidators, [$this, 'addRecordValidator']);
+
         $this->requestBearerTokenProvider = $requestBearerTokenProvider ?: new RequestBearerTokenProvider(
             logger: $this->logger,
             accountCredentialsValidator: $this->accountCredentialsValidator,
@@ -160,6 +183,7 @@ class BatchService implements BatchServiceInterface
         $this->requestFactory = $requestFactory;
         $this->responseFactory = $responseFactory;
         $this->userAgentProvider = $userAgentProvider ?: new UserAgentProvider();
+        $this->apiExceptionFactory = $apiExceptionFactory ?: new JsonExceptionFactory();
         $this->authAlgorithm = $authAlgorithm;
         $this->invalidRecordMode = $invalidRecordMode;
         $this->maxBatchSize = $maxBatchSize;
@@ -195,27 +219,71 @@ class BatchService implements BatchServiceInterface
     }
 
     /**
+     * @param AccountCredentials $accountCredentials
+     * @param RecordIterator $records
+     *
+     * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
+     */
+    public function put(
+        AccountCredentials $accountCredentials,
+        RecordIterator $records,
+    ): ApiResponseInterface {
+        return $this->send(
+            accountCredentials: $accountCredentials,
+            records: $records,
+            method: HttpMethods::PUT,
+        );
+    }
+
+    /**
+     * @param AccountCredentials $accountCredentials
+     * @param UpdateIterator $updates
+     *
+     * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
+     */
+    public function patch(
+        AccountCredentials $accountCredentials,
+        UpdateIterator $updates,
+    ): ApiResponseInterface {
+        return $this->send(
+            accountCredentials: $accountCredentials,
+            records: $updates,
+            method: HttpMethods::PATCH,
+        );
+    }
+
+    /**
      * @note If the invalid record mode is set to SKIP, invalid records will be ignored but any valid records
      *  will be sent to Klevu, which may lead to batch sizes smaller than expected. When the invalid record
      *  mode is set to FAIL, any invalid record will cause the entire batch to fail amd trigger am
      *  InvalidDataValidationException
      *
      * @param AccountCredentials $accountCredentials
-     * @param RecordIterator $records
+     * @param IteratorInterface $records
+     * @param string|HttpMethods $method
      *
      * @return ApiResponseInterface
+     * @throws \ValueError On invalid HTTP Method
      * @throws ValidationException Where the account credentials or record arguments contain invalid
      *           information and fail internal validation. API request is NOT sent
      * @throws InvalidDataValidationException When the number of records to send exceeds the batch size;
      *           any records fail validation and the invalid record mode is FAIL;
      *           or zero records are marked for send after validation is performed
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */
     public function send(
         AccountCredentials $accountCredentials,
-        RecordIterator $records,
+        IteratorInterface $records,
+        string|HttpMethods $method = HttpMethods::PUT,
     ): ApiResponseInterface {
+        if (is_string($method)) {
+            $method = HttpMethods::from($method);
+        }
+
         $this->validateAccountCredentials($accountCredentials);
 
         $allRecordsCount = $records->count();
@@ -233,6 +301,7 @@ class BatchService implements BatchServiceInterface
         $request = $this->buildRequest(
             accountCredentials: $accountCredentials,
             records: $validRecords,
+            method: $method,
         );
         $action = str_replace(
             search: [
@@ -247,6 +316,7 @@ class BatchService implements BatchServiceInterface
             message: sprintf('Request to send indexing records [%s]', $action),
             context: [
                 'class' => static::class,
+                'method' => $method,
                 'js_api_key' => $accountCredentials->jsApiKey,
                 'headers' => $this->maskHttpHeaders($request->getHeaders()),
                 'record_count' => $validRecords->count(),
@@ -266,6 +336,7 @@ class BatchService implements BatchServiceInterface
                 message: sprintf('Response from indexing records request [%s]', $action),
                 context: [
                     'class' => static::class,
+                    'method' => $method,
                     'js_api_key' => $accountCredentials->jsApiKey,
                     'status_code' => $response->getStatusCode(),
                     'response_time' => $endTime - $startTime,
@@ -313,6 +384,19 @@ class BatchService implements BatchServiceInterface
                 ? (array)$responseBodyDecoded['errors']
                 : null,
         );
+    }
+
+    /**
+     * @param ValidatorInterface $validator
+     * @param string $recordFqcn
+     *
+     * @return void
+     */
+    private function addRecordValidator(
+        ValidatorInterface $validator,
+        string $recordFqcn,
+    ): void {
+        $this->recordValidators[$recordFqcn] = $validator;
     }
 
     /**
@@ -381,13 +465,13 @@ class BatchService implements BatchServiceInterface
     }
 
     /**
-     * @param RecordIterator $records
+     * @param IteratorInterface $records
      *
-     * @return RecordIterator
+     * @return IteratorInterface
      */
-    private function filterValidRecords(RecordIterator $records): RecordIterator
+    private function filterValidRecords(IteratorInterface $records): IteratorInterface
     {
-        $validRecords = new RecordIterator();
+        $validRecords = [];
         $invalidRecordMessages = [];
 
         /**
@@ -396,8 +480,15 @@ class BatchService implements BatchServiceInterface
          */
         foreach ($records as $recordIndex => $record) {
             try {
-                $this->recordValidator->execute($record);
-                $validRecords->addItem($record);
+                foreach ($this->recordValidators as $recordFqcn => $recordValidator) {
+                    if (!($record instanceof $recordFqcn)) {
+                        continue;
+                    }
+
+                    $recordValidator->execute($record);
+                }
+
+                $validRecords[] = $record;
             } catch (ValidationException $exception) {
                 $invalidRecordMessages[$recordIndex] = array_map(
                     static fn (string $error): string => sprintf('Record #%s: %s', $recordIndex, $error),
@@ -438,22 +529,24 @@ class BatchService implements BatchServiceInterface
             }
         }
 
-        return $validRecords;
+        return new ($records::class)($validRecords);
     }
 
     /**
      * @param AccountCredentials $accountCredentials
-     * @param RecordIterator $records
+     * @param IteratorInterface $records
+     * @param HttpMethods $method
      *
      * @return RequestInterface
      */
     private function buildRequest(
         AccountCredentials $accountCredentials,
-        RecordIterator $records,
+        IteratorInterface $records,
+        HttpMethods $method,
     ): RequestInterface {
         $psr17Factory = $this->getPsr17Factory();
         $request = $psr17Factory->createRequest(
-            method: 'PUT',
+            method: $method->value,
             uri: $this->getEndpoint(),
         );
 
@@ -493,6 +586,7 @@ class BatchService implements BatchServiceInterface
      * @param string|null $responseBody
      *
      * @return void
+     * @throws ApiExceptionInterface
      * @throws BadResponseException
      * @throws BadRequestException
      */
@@ -500,58 +594,13 @@ class BatchService implements BatchServiceInterface
         int $responseCode,
         ?string $responseBody = null,
     ): void {
-        $responseMessage = null;
-        if (null !== $responseBody) {
-            /** @var array<string|string[]> $responseBodyDecoded */
-            $responseBodyDecoded = @json_decode($responseBody, true);
-            if (json_last_error()) {
-                throw new BadResponseException(
-                    message: 'Received invalid JSON response',
-                    code: $responseCode,
-                    errors: [
-                        json_last_error_msg(),
-                    ],
-                );
-            }
-
-            $responseMessage = $responseBodyDecoded['message'] ?? null;
-        }
-
-        $errors = array_filter(
-            array_merge(
-                (array)$responseMessage,
-                (array)($responseBodyDecoded['errors'] ?? []),
-            ),
+        $responseException = $this->apiExceptionFactory->createFromResponse(
+            responseCode: $responseCode,
+            responseBody: $responseBody,
         );
 
-        if (499 <= $responseCode) {
-            throw new BadResponseException(
-                message: sprintf(
-                    'API request rejected by Klevu API [%d] %s',
-                    $responseCode,
-                    is_string($responseMessage) ? $responseMessage : '',
-                ),
-                code: $responseCode,
-                errors: array_map(
-                    callback: 'strval',
-                    array: $errors,
-                ),
-            );
-        }
-
-        if (400 <= $responseCode) {
-            throw new BadRequestException(
-                message: sprintf(
-                    'API request rejected by Klevu API [%d] %s',
-                    $responseCode,
-                    is_string($responseMessage) ? $responseMessage : '',
-                ),
-                code: $responseCode,
-                errors: array_map(
-                    callback: 'strval',
-                    array: $errors,
-                ),
-            );
+        if ($responseException) {
+            throw $responseException;
         }
     }
 }

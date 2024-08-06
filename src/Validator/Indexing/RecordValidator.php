@@ -14,7 +14,8 @@ use Klevu\PhpSDK\Exception\Validation\InvalidTypeValidationException;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\Indexing\Record;
 use Klevu\PhpSDK\Validator\Indexing\Record\AttributesValidator;
-use Klevu\PhpSDK\Validator\Indexing\Record\DisplayValidator;
+use Klevu\PhpSDK\Validator\Indexing\Record\ChannelsValidator;
+use Klevu\PhpSDK\Validator\Indexing\Record\GroupsValidator;
 use Klevu\PhpSDK\Validator\Indexing\Record\IdValidator as RecordIdValidator;
 use Klevu\PhpSDK\Validator\Indexing\Record\RelationsValidator;
 use Klevu\PhpSDK\Validator\Indexing\Record\TypeValidator as RecordTypeValidator;
@@ -23,7 +24,7 @@ use Klevu\PhpSDK\Validator\ValidatorInterface;
 /**
  * Composite validator for testing a record is valid for requests to indexing APIs
  *
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  */
 class RecordValidator implements ValidatorInterface
@@ -40,7 +41,7 @@ class RecordValidator implements ValidatorInterface
      *          {@see RecordTypeValidator},
      *          {@see RelationsValidator},
      *          {@see AttributesValidator},
-     *          {@see DisplayValidator}
+     *          {@see ChannelsValidator}
      */
     public function __construct(
         ?array $dataValidators = null,
@@ -51,7 +52,8 @@ class RecordValidator implements ValidatorInterface
                 Record::FIELD_TYPE => new RecordTypeValidator(),
                 Record::FIELD_RELATIONS => new RelationsValidator(),
                 Record::FIELD_ATTRIBUTES => new AttributesValidator(),
-                Record::FIELD_DISPLAY => new DisplayValidator(),
+                Record::FIELD_GROUPS => new GroupsValidator(),
+                Record::FIELD_CHANNELS => new ChannelsValidator(),
             ];
         }
         $this->setDataValidators($dataValidators);
@@ -105,10 +107,18 @@ class RecordValidator implements ValidatorInterface
             );
         }
         try {
-            $this->validateDisplay($data);
+            $this->validateGroups($data);
         } catch (ValidationException $exception) {
             $errors[] = array_map(
-                static fn (string $error): string => 'display: ' . $error,
+                static fn (string $error): string => 'groups: ' . $error,
+                $exception->getErrors(),
+            );
+        }
+        try {
+            $this->validateChannels($data);
+        } catch (ValidationException $exception) {
+            $errors[] = array_map(
+                static fn (string $error): string => 'channels: ' . $error,
                 $exception->getErrors(),
             );
         }
@@ -249,10 +259,25 @@ class RecordValidator implements ValidatorInterface
      * @throws InvalidTypeValidationException
      * @throws InvalidDataValidationException
      */
-    private function validateDisplay(RecordInterface $data): void
+    private function validateGroups(RecordInterface $data): void
     {
-        $display = $data->getDisplay();
-        foreach ($this->dataValidators[Record::FIELD_DISPLAY] ?? [] as $validator) {
+        $groups = $data->getGroups();
+        foreach ($this->dataValidators[Record::FIELD_GROUPS] ?? [] as $validator) {
+            $validator->execute($groups);
+        }
+    }
+
+    /**
+     * @param RecordInterface $data
+     *
+     * @return void
+     * @throws InvalidTypeValidationException
+     * @throws InvalidDataValidationException
+     */
+    private function validateChannels(RecordInterface $data): void
+    {
+        $display = $data->getChannels();
+        foreach ($this->dataValidators[Record::FIELD_CHANNELS] ?? [] as $validator) {
             $validator->execute($display);
         }
     }

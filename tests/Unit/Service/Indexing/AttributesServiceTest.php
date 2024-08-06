@@ -14,6 +14,7 @@ use Klevu\PhpSDK\Api\Model\Indexing\AttributeInterface;
 use Klevu\PhpSDK\Api\Service\Indexing\AttributesServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\Validation\InvalidDataValidationException;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\ApiResponse;
@@ -550,6 +551,40 @@ class AttributesServiceTest extends TestCase
         $attributesService->getByName(
             accountCredentials: $accountCredentials,
             attributeName: 'test_attribute',
+        );
+    }
+
+    #[Test]
+    #[TestWith([''])]
+    #[TestWith([' '])]
+    #[TestWith(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   '])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['_foo'])]
+    #[TestWith(['foo_'])]
+    #[TestWith(['_foo_'])]
+    #[TestWith(['product-name'])]
+    #[TestWith(['foo!bar'])]
+    #[TestWith(['テスト属性'])]
+    public function testGetByName_FailsValidation(
+        string $attributeName,
+    ): void {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $attributesService = new AttributesService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $this->expectException(ValidationException::class);
+        $attributesService->getByName(
+            accountCredentials: $accountCredentials,
+            attributeName: $attributeName,
         );
     }
 
@@ -1731,6 +1766,46 @@ class AttributesServiceTest extends TestCase
     }
 
     #[Test]
+    #[TestWith([''])]
+    #[TestWith([' '])]
+    #[TestWith(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   '])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['_foo'])]
+    #[TestWith(['foo_'])]
+    #[TestWith(['_foo_'])]
+    #[TestWith(['product-name'])]
+    #[TestWith(['foo!bar'])]
+    #[TestWith(['テスト属性'])]
+    public function testPut_FailsValidation(
+        string $attributeName,
+    ): void {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $attributesService = new AttributesService(
+            httpClient: $mockHttpClient,
+            requestBearerTokenProvider: $this->getRequestBearerTokenProviderForFailedAuthAlgorithmValidation(),
+            authAlgorithm: AuthAlgorithms::HMAC_SHA384,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $this->expectException(InvalidDataValidationException::class);
+        $this->expectExceptionMessage('Data is not valid');
+        $attributesService->put(
+            accountCredentials: $accountCredentials,
+            attribute: (new AttributeFactory())->create([
+                'attributeName' => $attributeName,
+                'datatype' => 'STRING',
+            ]),
+        );
+    }
+
+    #[Test]
     public function testPut_SendRequest_ThrowsRequestException(): void
     {
         $mockHttpClient = $this->getMockHttpClient();
@@ -2332,6 +2407,43 @@ class AttributesServiceTest extends TestCase
     }
 
     #[Test]
+    #[TestWith([''])]
+    #[TestWith([' '])]
+    #[TestWith(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   '])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['_foo'])]
+    #[TestWith(['foo_'])]
+    #[TestWith(['_foo_'])]
+    #[TestWith(['product-name'])]
+    #[TestWith(['foo!bar'])]
+    #[TestWith(['テスト属性'])]
+    public function testDelete_FailsValidation(
+        string $attributeName,
+    ): void {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $attributesService = new AttributesService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $this->expectException(ValidationException::class);
+        $attributesService->delete(
+            accountCredentials: $accountCredentials,
+            attribute: (new AttributeFactory())->create([
+                'attributeName' => $attributeName,
+                'datatype' => 'STRING',
+            ]),
+        );
+    }
+
+    #[Test]
     public function testDelete_SendRequest_ThrowsRequestException(): void
     {
         $mockHttpClient = $this->getMockHttpClient();
@@ -2857,6 +2969,40 @@ class AttributesServiceTest extends TestCase
         $attributesService->deleteByName(
             accountCredentials: $accountCredentials,
             attributeName: 'test_attribute',
+        );
+    }
+
+    #[Test]
+    #[TestWith([''])]
+    #[TestWith([' '])]
+    #[TestWith(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   '])] // phpcs:ignore Generic.Files.LineLength.TooLong
+    #[TestWith(['_foo'])]
+    #[TestWith(['foo_'])]
+    #[TestWith(['_foo_'])]
+    #[TestWith(['product-name'])]
+    #[TestWith(['foo!bar'])]
+    #[TestWith(['テスト属性'])]
+    public function testDeleteByName_FailsValidation(
+        string $attributeName,
+    ): void {
+        $mockHttpClient = $this->getMockHttpClient();
+        $mockHttpClient->expects($this->never())
+            ->method('sendRequest');
+
+        $attributesService = new AttributesService(
+            httpClient: $mockHttpClient,
+        );
+
+        $accountCredentials = new AccountCredentials(
+            jsApiKey: 'klevu-1234567890',
+            restAuthKey: 'ABCDE1234567890',
+        );
+
+        $this->expectException(ValidationException::class);
+        $attributesService->deleteByName(
+            accountCredentials: $accountCredentials,
+            attributeName:$attributeName,
         );
     }
 

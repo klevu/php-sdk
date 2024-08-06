@@ -49,11 +49,11 @@ class EventIterator implements IteratorInterface
      * Returns the current event
      *
      * @link https://php.net/manual/en/iterator.current.php
-     * @return Event
+     * @return Event|null
      */
-    public function current(): Event
+    public function current(): ?Event
     {
-        return $this->data[$this->key()];
+        return $this->data[$this->key()] ?? null;
     }
 
     /**

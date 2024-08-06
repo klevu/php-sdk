@@ -262,6 +262,38 @@ interface AccountInterface
     public function setTiersUrl(?string $tiersUrl): void;
 
     /**
+     * Returns the indexing version configured for this account
+     *
+     * @return string
+     */
+    public function getIndexingVersion(): string;
+
+    /**
+     * Sets the indexing version configured for this account
+     *
+     * @param string $indexingVersion
+     *
+     * @return void
+     */
+    public function setIndexingVersion(string $indexingVersion): void;
+
+    /**
+     * Returns the default current (ISO-3 code) configured for this account
+     *
+     * @return string
+     */
+    public function getDefaultCurrency(): string;
+
+    /**
+     * Sets the default currency configured for this account
+     *
+     * @param string $defaultCurrency
+     *
+     * @return void
+     */
+    public function setDefaultCurrency(string $defaultCurrency): void;
+
+    /**
      * Returns information about which features are available for this account, based on subscription
      *  and other configuration for the Klevu account
      *

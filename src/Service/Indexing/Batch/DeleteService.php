@@ -14,11 +14,17 @@ use Klevu\PhpSDK\Api\Model\Indexing\RecordInterface;
 use Klevu\PhpSDK\Api\Service\Indexing\BatchDeleteServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\ApiExceptionFactoryInterface;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
+use Klevu\PhpSDK\Model\HttpMethods;
 use Klevu\PhpSDK\Model\Indexing\AuthAlgorithms;
+use Klevu\PhpSDK\Model\Indexing\Record;
 use Klevu\PhpSDK\Model\Indexing\RecordFactory;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
+use Klevu\PhpSDK\Model\IteratorInterface;
 use Klevu\PhpSDK\Provider\BaseUrlsProvider;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\Indexing\Batch\Delete\RequestPayloadProvider;
@@ -44,7 +50,7 @@ use Psr\Log\LoggerInterface;
  *      data validators where none are explicitly provided during object instantiation
  *
  * @link https://docs.klevu.com/indexing-apis/deleting-an-item-from-the-catalog
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  * @uses RequestPayloadProvider
  */
@@ -72,8 +78,8 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
      * @param ValidatorInterface|null $accountCredentialsValidator
      *      If null, a new instance of {@see AccountCredentialsValidator} is used
      *      (via parent __construct's null handling)
-     * @param ValidatorInterface|null $recordValidator
-     *      If null, a new instance of {@see RecordValidator} with validation on only id
+     * @param ValidatorInterface[]|null $recordValidators
+     *      If null, a new array containing an instance of {@see RecordValidator} with validation on only id
      *      (via a new {@see RecordIdValidator}) will be created
      * @param RecordFactory|null $recordFactory
      *      If null, a new instanceof {@see RecordFactory} is used
@@ -84,6 +90,8 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
      * @param ResponseFactoryInterface|null $responseFactory
      * @param UserAgentProviderInterface|null $userAgentProvider
      *      If null, a new instance of {@see UserAgentProvider} is used (via parent __construct's null handling)
+     * @param ApiExceptionFactoryInterface|null $apiExceptionFactory
+     *        If null, a new instance of {@see JsonExceptionFactory} is used (via parent __construct's null handling)
      * @param AuthAlgorithms $authAlgorithm
      * @param InvalidRecordMode $invalidRecordMode
      * @param int $maxBatchSize
@@ -96,13 +104,14 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
         ?ClientInterface $httpClient = null,
         ?LoggerInterface $logger = null,
         ?ValidatorInterface $accountCredentialsValidator = null,
-        ?ValidatorInterface $recordValidator = null,
+        ?array $recordValidators = null,
         ?RecordFactory $recordFactory = null,
         ?RequestBearerTokenProviderInterface $requestBearerTokenProvider = null,
         ?RequestPayloadProviderInterface $requestPayloadProvider = null,
         ?RequestFactoryInterface $requestFactory = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?UserAgentProviderInterface $userAgentProvider = null,
+        ?ApiExceptionFactoryInterface $apiExceptionFactory = null,
         AuthAlgorithms $authAlgorithm = AuthAlgorithms::HMAC_SHA384,
         InvalidRecordMode $invalidRecordMode = InvalidRecordMode::SKIP,
         int $maxBatchSize = 250,
@@ -110,13 +119,17 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
         $this->baseUrlsProvider = $baseUrlsProvider ?? new BaseUrlsProvider();
         $this->recordFactory = $recordFactory ?? new RecordFactory();
 
-        $recordValidator ??= new RecordValidator(
+        if (null === $recordValidators) {
+            $recordValidators = [];
+        }
+        $recordValidators[RecordInterface::class] ??= new RecordValidator(
             dataValidators: [
-                'id' => new RecordIdValidator(),
-                'type' => null,
-                'relations' => null,
-                'attributes' => null,
-                'display' => null,
+                Record::FIELD_ID => new RecordIdValidator(),
+                Record::FIELD_TYPE => null,
+                Record::FIELD_RELATIONS => null,
+                Record::FIELD_ATTRIBUTES => null,
+                Record::FIELD_GROUPS => null,
+                Record::FIELD_CHANNELS => null,
             ],
         );
         $requestPayloadProvider ??= new RequestPayloadProvider();
@@ -126,12 +139,13 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
             httpClient: $httpClient,
             logger: $logger,
             accountCredentialsValidator: $accountCredentialsValidator,
-            recordValidator: $recordValidator,
+            recordValidators: $recordValidators,
             requestBearerTokenProvider: $requestBearerTokenProvider,
             requestPayloadProvider: $requestPayloadProvider,
             requestFactory: $requestFactory,
             responseFactory: $responseFactory,
             userAgentProvider: $userAgentProvider,
+            apiExceptionFactory: $apiExceptionFactory,
             authAlgorithm: $authAlgorithm,
             invalidRecordMode: $invalidRecordMode,
             maxBatchSize: $maxBatchSize,
@@ -157,6 +171,31 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
     }
 
     /**
+     * @param AccountCredentials $accountCredentials
+     * @param IteratorInterface $records
+     * @param string|HttpMethods $method
+     *
+     * @return ApiResponseInterface
+     * @throws \ValueError On invalid HTTP Method
+     * @throws ApiExceptionInterface
+     */
+    public function send(
+        AccountCredentials $accountCredentials,
+        IteratorInterface $records,
+        string|HttpMethods $method = HttpMethods::PUT,
+    ): ApiResponseInterface {
+        if (is_string($method)) {
+            $method = HttpMethods::from($method);
+        }
+
+        if (HttpMethods::PATCH === $method) {
+            throw new \LogicException('Not implemented');
+        }
+
+        return parent::send($accountCredentials, $records, $method);
+    }
+
+    /**
      * Sends a request to Klevu to delete the indexed records corresponding to the passed ids
      *      for the specified account
      *
@@ -166,6 +205,7 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials or record ids contain invalid
@@ -185,6 +225,25 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
                     array_unique($recordIds, SORT_REGULAR),
                 ),
             ),
+            method: HttpMethods::PUT,
         );
+    }
+
+    /**
+     * Method is not implemented and will always throw exception
+     *
+     * @param AccountCredentials $accountCredentials
+     * @param UpdateIterator $updates
+     *
+     * @return ApiResponseInterface
+     * @throws \LogicException Method is not implemented for delete operations
+     */
+    public function patch(
+        // phpcs:disable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+        AccountCredentials $accountCredentials,
+        UpdateIterator $updates,
+        // phpcs:enable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+    ): ApiResponseInterface {
+        throw new \LogicException('Not implemented');
     }
 }

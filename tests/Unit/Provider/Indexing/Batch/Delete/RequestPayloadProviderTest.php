@@ -10,6 +10,9 @@ namespace Klevu\PhpSDK\Test\Unit\Provider\Indexing\Batch\Delete;
 
 use Klevu\PhpSDK\Model\Indexing\Record;
 use Klevu\PhpSDK\Model\Indexing\RecordIterator;
+use Klevu\PhpSDK\Model\Indexing\UpdateFactory;
+use Klevu\PhpSDK\Model\Indexing\UpdateIterator;
+use Klevu\PhpSDK\Model\IteratorInterface;
 use Klevu\PhpSDK\Provider\Indexing\Batch\Delete\RequestPayloadProvider;
 use Klevu\PhpSDK\Provider\Indexing\Batch\RequestPayloadProviderInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,6 +39,8 @@ class RequestPayloadProviderTest extends TestCase
      */
     public static function dataProvider_testGet(): array
     {
+        $updateFactory = new UpdateFactory();
+
         return [
             [
                 new RecordIterator([
@@ -67,7 +72,7 @@ class RequestPayloadProviderTest extends TestCase
                     new Record(
                         id: '123',
                         type: 'KLEVU_PRODUCT',
-                        display: [
+                        channels: [
                             'default' => [
                                 'name' => 'Parent Product',
                             ],
@@ -82,13 +87,23 @@ class RequestPayloadProviderTest extends TestCase
                     ],
                 ]),
             ],
+            [
+                new UpdateIterator([
+                    $updateFactory->create([
+                        'op' => 'add',
+                        'path' => '/foo/bar',
+                        'value' => 'baz',
+                    ]),
+                ]),
+                '',
+            ],
         ];
     }
 
     #[Test]
     #[DataProvider('dataProvider_testGet')]
     public function testGet(
-        RecordIterator $records,
+        IteratorInterface $records,
         string $expectedResult,
     ): void {
         $requestPayloadProvider = new RequestPayloadProvider();

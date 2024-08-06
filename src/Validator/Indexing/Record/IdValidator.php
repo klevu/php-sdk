@@ -15,7 +15,7 @@ use Klevu\PhpSDK\Validator\ValidatorInterface;
 /**
  * Validator to test that a Record's "id" value is valid for indexing
  *
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  */
 class IdValidator implements ValidatorInterface

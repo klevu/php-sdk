@@ -135,7 +135,9 @@ class AccountLookupServiceTest extends TestCase
     "catNavUrl": "cn.ksearchnet.com",
     "analyticsUrl": "stats.ksearchnet.com",
     "jsUrl": "js.klevu.com",
-    "tiersUrl": "tiers.klevu.com"
+    "tiersUrl": "tiers.klevu.com",
+    "indexingVersion": "3",
+    "defaultCurrency": "EUR"
 }
 JSON;
         $mockResponse = $this->getMockResponse(
@@ -191,6 +193,8 @@ JSON;
         $this->assertSame('stats.ksearchnet.com', $account->getAnalyticsUrl());
         $this->assertSame('js.klevu.com', $account->getJsUrl());
         $this->assertSame('tiers.klevu.com', $account->getTiersUrl());
+        $this->assertSame('3', $account->getIndexingVersion());
+        $this->assertSame('EUR', $account->getDefaultCurrency());
         $this->assertFalse($account->getAccountFeatures()->smartCategoryMerchandising);
         $this->assertFalse($account->getAccountFeatures()->smartRecommendations);
     }
@@ -219,7 +223,9 @@ JSON;
     "catNavUrl": "cn.ksearchnet.com",
     "analyticsUrl": "stats.ksearchnet.com",
     "jsUrl": "js.klevu.com",
-    "tiersUrl": "tiers.klevu.com"
+    "tiersUrl": "tiers.klevu.com",
+    "indexingVersion": "3",
+    "defaultCurrency": "EUR"
 }
 JSON;
         $mockResponse = $this->getMockResponse(
@@ -273,7 +279,9 @@ JSON;
     "catNavUrl": "cn.ksearchnet.com",
     "analyticsUrl": "stats.ksearchnet.com",
     "jsUrl": "js.klevu.com",
-    "tiersUrl": "tiers.klevu.com"
+    "tiersUrl": "tiers.klevu.com",
+    "indexingVersion": "3",
+    "defaultCurrency": "EUR"
 }
 JSON;
         $mockResponse = $this->getMockResponse(

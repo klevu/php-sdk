@@ -55,6 +55,12 @@ class AttributeFactory
         if (array_key_exists(Attribute::FIELD_RETURNABLE, $data)) {
             $attribute->setReturnable($data[Attribute::FIELD_RETURNABLE]);
         }
+        if (array_key_exists(Attribute::FIELD_ABBREVIATE, $data)) {
+            $attribute->setAbbreviate($data[Attribute::FIELD_ABBREVIATE]);
+        }
+        if (array_key_exists(Attribute::FIELD_RANGEABLE, $data)) {
+            $attribute->setRangeable($data[Attribute::FIELD_RANGEABLE]);
+        }
         if (array_key_exists(Attribute::FIELD_IMMUTABLE, $data)) {
             $attribute->setImmutable($data[Attribute::FIELD_IMMUTABLE]);
         }

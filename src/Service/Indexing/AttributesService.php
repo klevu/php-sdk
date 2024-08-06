@@ -16,9 +16,13 @@ use Klevu\PhpSDK\Api\Model\Indexing\AttributeInterface;
 use Klevu\PhpSDK\Api\Service\Indexing\AttributesServiceInterface;
 use Klevu\PhpSDK\Exception\Api\BadRequestException;
 use Klevu\PhpSDK\Exception\Api\BadResponseException;
+use Klevu\PhpSDK\Exception\Api\JsonExceptionFactory;
+use Klevu\PhpSDK\Exception\ApiExceptionFactoryInterface;
+use Klevu\PhpSDK\Exception\ApiExceptionInterface;
 use Klevu\PhpSDK\Exception\ValidationException;
 use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Model\ApiResponse;
+use Klevu\PhpSDK\Model\HttpMethods;
 use Klevu\PhpSDK\Model\Indexing\Attribute;
 use Klevu\PhpSDK\Model\Indexing\AttributeFactory;
 use Klevu\PhpSDK\Model\Indexing\AttributeIterator;
@@ -50,7 +54,7 @@ use Psr\Log\LoggerInterface;
  * Service class responsible for managing attributes registered with the Klevu indexing service
  *
  * @link https://docs.klevu.com/indexing-apis/adding-additionalcustom-attributes-to-a-product
- * @link https://docs.klevu.com/indexing-apis/api-definition
+ * @link https://docs.klevu.com/indexing-apis/api-schema-swaggeropenapi-specification
  * @since 1.0.0
  */
 class AttributesService implements AttributesServiceInterface
@@ -96,6 +100,10 @@ class AttributesService implements AttributesServiceInterface
      */
     private readonly UserAgentProviderInterface $userAgentProvider;
     /**
+     * @var ApiExceptionFactoryInterface
+     */
+    private readonly ApiExceptionFactoryInterface $apiExceptionFactory;
+    /**
      * @var AuthAlgorithms
      */
     private readonly AuthAlgorithms $authAlgorithm;
@@ -115,6 +123,9 @@ class AttributesService implements AttributesServiceInterface
      * @param AuthAlgorithms $authAlgorithm
      * @param ValidatorInterface|null $attributeValidator
      * @param UserAgentProviderInterface|null $userAgentProvider
+     * @param ApiExceptionFactoryInterface|null $apiExceptionFactory
+     *       If null, a new instance of {@see JsonExceptionFactory} is used
+     * @param AuthAlgorithms $authAlgorithm
      *
      * @throws NotFoundException Where httpClient is not provided and no PSR-18 compatible ClientInterface
      *       can be automagically discovered
@@ -131,6 +142,7 @@ class AttributesService implements AttributesServiceInterface
         ?ResponseFactoryInterface $responseFactory = null,
         ?ValidatorInterface $attributeValidator = null,
         ?UserAgentProviderInterface $userAgentProvider = null,
+        ?ApiExceptionFactoryInterface $apiExceptionFactory = null,
         AuthAlgorithms $authAlgorithm = AuthAlgorithms::HMAC_SHA384,
     ) {
         $this->baseUrlsProvider = $baseUrlsProvider ?: new BaseUrlsProvider();
@@ -149,6 +161,7 @@ class AttributesService implements AttributesServiceInterface
             attributeNameValidator: $this->attributeNameValidator,
         );
         $this->userAgentProvider = $userAgentProvider ?: new UserAgentProvider();
+        $this->apiExceptionFactory = $apiExceptionFactory ?: new JsonExceptionFactory();
         $this->authAlgorithm = $authAlgorithm;
     }
 
@@ -192,6 +205,7 @@ class AttributesService implements AttributesServiceInterface
      * @return AttributeInterface|null
      * @throws ValidationException Where the account credentials or attribute name arguments contain invalid
      *       information and fail internal validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */
@@ -199,6 +213,8 @@ class AttributesService implements AttributesServiceInterface
         AccountCredentials $accountCredentials,
         string $attributeName,
     ): ?AttributeInterface {
+        $this->attributeNameValidator->execute($attributeName);
+
         $attributes = $this->get(
             accountCredentials: $accountCredentials,
         );
@@ -217,6 +233,7 @@ class AttributesService implements AttributesServiceInterface
      * @return AttributeIterator
      * @throws ValidationException Where the account credentials contain invalid information and fail internal
      *       validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */
@@ -227,7 +244,7 @@ class AttributesService implements AttributesServiceInterface
 
         $request = $this->buildRequest(
             accountCredentials: $accountCredentials,
-            method: 'GET',
+            method: HttpMethods::GET,
             endpoint: $this->getEndpoint(),
         );
         $this->logger?->debug('Request to get indexing attributes list', [
@@ -315,6 +332,7 @@ class AttributesService implements AttributesServiceInterface
      * @param AccountCredentials $accountCredentials
      *
      * @return ApiResponseInterface
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      * @throws ValidationException Where the account credentials or attribute arguments contain invalid
@@ -335,7 +353,7 @@ class AttributesService implements AttributesServiceInterface
 
         $request = $this->buildRequest(
             accountCredentials: $accountCredentials,
-            method: 'PUT',
+            method: HttpMethods::PUT,
             endpoint: $endpoint,
             requestBody: (string)json_encode($attributeData),
         );
@@ -417,6 +435,7 @@ class AttributesService implements AttributesServiceInterface
      * @return ApiResponseInterface
      * @throws ValidationException Where the account credentials or attribute arguments contain invalid
      *         information and fail internal validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */
@@ -440,6 +459,7 @@ class AttributesService implements AttributesServiceInterface
      * @return ApiResponseInterface
      * @throws ValidationException Where the account credentials or attribute name arguments contain invalid
      *        information and fail internal validation. API request is NOT sent
+     * @throws ApiExceptionInterface
      * @throws BadRequestException Where the Klevu service rejects the request as invalid (4xx response code)
      * @throws BadResponseException Where the Klevu service does not return a valid response (timeouts, 5xx response)
      */
@@ -454,7 +474,7 @@ class AttributesService implements AttributesServiceInterface
 
         $request = $this->buildRequest(
             accountCredentials: $accountCredentials,
-            method: 'DELETE',
+            method: HttpMethods::DELETE,
             endpoint: $endpoint,
         );
         $this->logger?->debug('Request to get delete indexing attribute', [
@@ -543,21 +563,22 @@ class AttributesService implements AttributesServiceInterface
 
     /**
      * @param AccountCredentials $accountCredentials
-     * @param string $method
+     * @param HttpMethods $method
      * @param string $endpoint
      * @param string|null $requestBody
      *
      * @return RequestInterface
+     * @throws \ValueError
      */
     private function buildRequest(
         AccountCredentials $accountCredentials,
-        string $method,
+        HttpMethods $method,
         string $endpoint,
         ?string $requestBody = null,
     ): RequestInterface {
         $psr17Factory = $this->getPsr17Factory();
         $request = $psr17Factory->createRequest(
-            method: $method,
+            method: $method->value,
             uri: $endpoint,
         );
 
@@ -597,6 +618,7 @@ class AttributesService implements AttributesServiceInterface
      * @param string|null $responseBody
      *
      * @return void
+     * @throws ApiExceptionInterface
      * @throws BadResponseException
      * @throws BadRequestException
      */
@@ -604,50 +626,13 @@ class AttributesService implements AttributesServiceInterface
         int $responseCode,
         ?string $responseBody = null,
     ): void {
-        $responseMessage = null;
-        if (null !== $responseBody) {
-            /** @var array<string|string[]> $responseBodyDecoded */
-            $responseBodyDecoded = @json_decode( // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
-                $responseBody,
-                true,
-            );
-            if (json_last_error()) {
-                throw new BadResponseException(
-                    message: 'Received invalid JSON response',
-                    code: $responseCode,
-                    errors: [
-                        json_last_error_msg(),
-                    ],
-                );
-            }
+        $responseException = $this->apiExceptionFactory->createFromResponse(
+            responseCode: $responseCode,
+            responseBody: $responseBody,
+        );
 
-            $responseMessage = $responseBodyDecoded['message'] ?? null;
-        }
-
-        if (499 <= $responseCode) {
-            throw new BadResponseException(
-                message: sprintf(
-                    'Unexpected Response Code [%d] %s',
-                    $responseCode,
-                    is_array($responseMessage)
-                        ? implode(',', $responseMessage)
-                        : $responseCode,
-                ),
-                code: $responseCode,
-            );
-        }
-
-        if (400 <= $responseCode) {
-            throw new BadRequestException(
-                message: sprintf(
-                    'API request rejected by Klevu API [%d] %s',
-                    $responseCode,
-                    is_array($responseMessage)
-                        ? implode(',', $responseMessage)
-                        : $responseCode,
-                ),
-                code: $responseCode,
-            );
+        if ($responseException) {
+            throw $responseException;
         }
     }
 }

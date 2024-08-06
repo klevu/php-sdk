@@ -2,9 +2,9 @@
     "name": "klevu/php-sdk",
     "description": "Klevu SDK for PHP",
     "type": "library",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "require": {
-        "php": "~8.1|~8.2",
+        "php": "~8.1|~8.2|~8.3",
         "ext-libxml": "*",
         "ext-simplexml": "*",
         "psr/log": "*",
