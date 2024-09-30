@@ -87,6 +87,14 @@ class Attribute implements AttributeInterface
      */
     final public const FIELD_RANGEABLE = 'rangeable';
     /**
+     * Key used to reference aliases property when converting to/from array
+     *
+     * @see Attribute::toArray()
+     * @see AttributeFactory::create()
+     * @var string
+     */
+    final public const FIELD_ALIASES = 'aliases';
+    /**
      * Key used to reference immutable property when converting to/from array
      *
      * @see Attribute::toArray()
@@ -128,6 +136,10 @@ class Attribute implements AttributeInterface
      */
     private bool $rangeable = false;
     /**
+     * @var string[]
+     */
+    private array $aliases = [];
+    /**
      * @var bool
      */
     private bool $immutable = false;
@@ -139,6 +151,9 @@ class Attribute implements AttributeInterface
      * @param bool|null $searchable
      * @param bool|null $filterable
      * @param bool|null $returnable
+     * @param bool|null $abbreviate
+     * @param bool|null $rangeable
+     * @param string[]|null $aliases
      * @param bool|null $immutable
      */
     public function __construct(
@@ -150,6 +165,7 @@ class Attribute implements AttributeInterface
         ?bool $returnable = null,
         ?bool $abbreviate = null,
         ?bool $rangeable = null,
+        ?array $aliases = null,
         ?bool $immutable = null,
     ) {
         $this->attributeName = $attributeName;
@@ -171,6 +187,9 @@ class Attribute implements AttributeInterface
         }
         if (null !== $rangeable) {
             $this->setRangeable($rangeable);
+        }
+        if (null !== $aliases) {
+            $this->setAliases($aliases);
         }
         if (null !== $immutable) {
             $this->setImmutable($immutable);
@@ -373,6 +392,51 @@ class Attribute implements AttributeInterface
     }
 
     /**
+     * @return string[]
+     */
+    public function getAliases(): array
+    {
+        return $this->aliases;
+    }
+
+    /**
+     * Sets array of aliases
+     *
+     * @param array<int, string> $aliases
+     *
+     * @return void
+     * @throws CouldNotUpdateException Where the attribute is marked as immutable
+     */
+    public function setAliases(array $aliases): void
+    {
+        $this->aliases = [];
+        array_walk(
+            $aliases,
+            // Cannot use [$this, 'addAlias'] because then types are silently juggled to string
+            function (mixed $alias): void {
+                $this->addAlias(alias: $alias);
+            },
+        );
+    }
+
+    /**
+     * Adds alias to the existing aliases array
+     *
+     * @param string $alias
+     *
+     * @return void
+     * @throws CouldNotUpdateException Where the attribute is marked as immutable
+     */
+    public function addAlias(string $alias): void
+    {
+        if ($this->isImmutable()) {
+            throw new CouldNotUpdateException('Cannot update aliases property of immutable Attribute');
+        }
+
+        $this->aliases[] = $alias;
+    }
+
+    /**
      * @return bool
      */
     public function isImmutable(): bool
@@ -411,6 +475,7 @@ class Attribute implements AttributeInterface
             self::FIELD_RETURNABLE => $this->isReturnable(),
             self::FIELD_ABBREVIATE => $this->isAbbreviate(),
             self::FIELD_RANGEABLE => $this->isRangeable(),
+            self::FIELD_ALIASES => $this->getAliases(),
             self::FIELD_IMMUTABLE => $this->isImmutable(),
         ];
     }

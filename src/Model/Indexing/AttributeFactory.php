@@ -61,6 +61,9 @@ class AttributeFactory
         if (array_key_exists(Attribute::FIELD_RANGEABLE, $data)) {
             $attribute->setRangeable($data[Attribute::FIELD_RANGEABLE]);
         }
+        if (array_key_exists(Attribute::FIELD_ALIASES, $data)) {
+            $attribute->setAliases($data[Attribute::FIELD_ALIASES]);
+        }
         if (array_key_exists(Attribute::FIELD_IMMUTABLE, $data)) {
             $attribute->setImmutable($data[Attribute::FIELD_IMMUTABLE]);
         }

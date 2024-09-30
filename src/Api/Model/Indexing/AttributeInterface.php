@@ -78,6 +78,13 @@ interface AttributeInterface
     public function isImmutable(): bool;
 
     /**
+     * Returns array of aliases for this attributeName
+     *
+     * @return string[]
+     */
+    public function getAliases(): array;
+
+    /**
      * Returns the attribute data in array format
      *
      * @return array<string, string|array<string, string>|bool>

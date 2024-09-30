@@ -260,6 +260,59 @@ class JsonExceptionFactoryTest extends TestCase
                     ],
                 ),
             ],
+            // KS-22130
+            [
+                500,
+                '{"status":400,"code":"VALIDATION_ERROR","message":"The request was invalid. Please check the provided payload for errors.","debug":[{"message":["The provided record URL is not included in the list of allowed base URLs."]}]}', // phpcs:ignore Generic.Files.LineLength.TooLong
+                new BadResponseException(
+                    message: 'The request was invalid. Please check the provided payload for errors.',
+                    code: 500,
+                    errors: [
+                        'The request was invalid. Please check the provided payload for errors.',
+                    ],
+                    apiCode: 'VALIDATION_ERROR',
+                    path: null,
+                    debug: [
+                        'The provided record URL is not included in the list of allowed base URLs.',
+                    ],
+                ),
+            ],
+            [
+                500,
+                '{"status":400,"code":"VALIDATION_ERROR","message":"The request was invalid. Please check the provided payload for errors.","debug":[{"message":["Debug 1", "Debug 2"]}]}', // phpcs:ignore Generic.Files.LineLength.TooLong
+                new BadResponseException(
+                    message: 'The request was invalid. Please check the provided payload for errors.',
+                    code: 500,
+                    errors: [
+                        'The request was invalid. Please check the provided payload for errors.',
+                    ],
+                    apiCode: 'VALIDATION_ERROR',
+                    path: null,
+                    debug: [
+                        'Debug 1',
+                        'Debug 2',
+                    ],
+                ),
+            ],
+            [
+                500,
+                '{"status":400,"code":"VALIDATION_ERROR","message":"The request was invalid. Please check the provided payload for errors.","debug":[{"message":["Debug 1a", "Debug 1b"]},{"message":"Debug 2"},{"message":["Debug 3a"]}]}', // phpcs:ignore Generic.Files.LineLength.TooLong
+                new BadResponseException(
+                    message: 'The request was invalid. Please check the provided payload for errors.',
+                    code: 500,
+                    errors: [
+                        'The request was invalid. Please check the provided payload for errors.',
+                    ],
+                    apiCode: 'VALIDATION_ERROR',
+                    path: null,
+                    debug: [
+                        'Debug 1a',
+                        'Debug 1b',
+                        'Debug 2',
+                        'Debug 3a',
+                    ],
+                ),
+            ],
         ];
     }
 
