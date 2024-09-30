@@ -187,15 +187,22 @@ class JsonExceptionFactory implements ApiExceptionFactoryInterface
             return null;
         }
 
+        $debugMessages = [];
+        foreach ($debug as $debugRow) {
+            if (is_scalar($debugRow)) {
+                $debugMessages[] = [trim((string)$debugRow)];
+                continue;
+            }
+
+            if (!is_array($debugRow) || empty($debugRow['message'])) {
+                continue;
+            }
+
+            $debugMessages[] = array_map('strval', (array)$debugRow['message']);
+        }
+
         return array_filter(
-            array_map(
-                callback: static fn (mixed $debugRow): ?string => match (true) {
-                    is_array($debugRow) => $debugRow['message'] ?? null,
-                    is_scalar($debugRow) => trim((string)$debugRow),
-                    default => null,
-                },
-                array: $debug,
-            ),
+            array_merge([], ...$debugMessages),
         );
     }
 }

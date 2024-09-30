@@ -47,6 +47,7 @@ class AttributeTest extends TestCase
         $this->assertFalse($attribute->isAbbreviate());
         $this->assertFalse($attribute->isRangeable());
         $this->assertFalse($attribute->isImmutable());
+        $this->assertSame([], $attribute->getAliases());
     }
 
     #[Test]
@@ -64,6 +65,9 @@ class AttributeTest extends TestCase
             abbreviate: true,
             rangeable: true,
             immutable: true,
+            aliases: [
+                'test_attrib',
+            ]
         );
 
         $this->assertSame('test_attribute', $attribute->getAttributeName());
@@ -80,6 +84,12 @@ class AttributeTest extends TestCase
         $this->assertTrue($attribute->isAbbreviate());
         $this->assertTrue($attribute->isRangeable());
         $this->assertTrue($attribute->isImmutable());
+        $this->assertSame(
+            expected: [
+                'test_attrib',
+            ],
+            actual: $attribute->getAliases(),
+        );
     }
 
     #[Test]
@@ -279,6 +289,47 @@ class AttributeTest extends TestCase
         $attribute->setRangeable(true);
     }
 
+    #[Test]
+    public function testGetSetAddAliases(): void
+    {
+        $attribute = new Attribute(
+            attributeName: 'test_attribute',
+            datatype: DataType::STRING->value,
+        );
+
+        $this->assertSame([], $attribute->getAliases());
+
+        $attribute->setAliases(['test_attrib']);
+        $this->assertSame(
+            expected: ['test_attrib',],
+            actual: $attribute->getAliases(),
+        );
+
+        $attribute->addAlias(alias: 'test_att');
+        $this->assertSame(
+            expected: [
+                'test_attrib',
+                'test_att',
+            ],
+            actual: $attribute->getAliases(),
+        );
+    }
+
+    #[Test]
+    public function testGetSetAddAliases_Immutable(): void
+    {
+        $attribute = new Attribute(
+            attributeName: 'test_attribute',
+            datatype: DataType::STRING->value,
+            immutable: true,
+        );
+
+        $this->assertSame([], $attribute->getAliases());
+
+        $this->expectException(CouldNotUpdateException::class);
+        $attribute->setAliases(['test_attrib']);
+    }
+
     public function testGetSetImmutable(): void
     {
         $attribute = new Attribute(
@@ -344,6 +395,12 @@ class AttributeTest extends TestCase
 
         $attribute->setRangeable(true);
         $this->assertTrue($attribute->isRangeable());
+
+        $attribute->setAliases(['test_attrib']);
+        $this->assertSame(
+            expected: ['test_attrib'],
+            actual: $attribute->getAliases(),
+        );
     }
 
     #[Test]
@@ -362,6 +419,10 @@ class AttributeTest extends TestCase
         $attribute->setReturnable(false);
         $attribute->setAbbreviate(true);
         $attribute->setRangeable(true);
+        $attribute->setAliases([
+            'test_attrib',
+            'test_att',
+        ]);
         $attribute->setImmutable(true);
 
         $this->assertSame(
@@ -377,6 +438,10 @@ class AttributeTest extends TestCase
                 Attribute::FIELD_RETURNABLE => false,
                 Attribute::FIELD_ABBREVIATE => true,
                 Attribute::FIELD_RANGEABLE => true,
+                Attribute::FIELD_ALIASES => [
+                    'test_attrib',
+                    'test_att',
+                ],
                 Attribute::FIELD_IMMUTABLE => true,
             ],
             actual: $attribute->toArray(),
