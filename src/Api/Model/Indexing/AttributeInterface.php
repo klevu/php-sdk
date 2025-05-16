@@ -78,6 +78,13 @@ interface AttributeInterface
     public function isImmutable(): bool;
 
     /**
+     * Whether this (numeric) attribute can be used to create a range filter
+     * 
+     * @return bool
+     */
+    public function isRangeable(): bool;
+
+    /**
      * Returns array of aliases for this attributeName
      *
      * @return string[]
