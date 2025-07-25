@@ -95,6 +95,24 @@ class UpdateFactoryTest extends TestCase
                 ['path' => (object)['op' => 'add']],
                 \TypeError::class,
             ],
+            [
+                [
+                    'record_id' => null,
+                    'op' => '',
+                    'path' => null,
+                    'value' => null,
+                ],
+                \TypeError::class,
+            ],
+            [
+                [
+                    'record_id' => '',
+                    'op' => null,
+                    'path' => null,
+                    'value' => null,
+                ],
+                \TypeError::class,
+            ],
         ];
     }
 
@@ -251,6 +269,29 @@ class UpdateFactoryTest extends TestCase
         $this->assertInstanceOf(Update::class, $update);
         $this->assertSame(
             expected: $expectedResult,
+            actual: $update->toArray(),
+        );
+    }
+
+    #[Test]
+    public function testCreate_NullData(): void
+    {
+        $updateFactory = new UpdateFactory();
+
+        $update = $updateFactory->create([
+            'record_id' => '',
+            'op' => '',
+            'path' => null,
+            'value' => null,
+        ]);
+        $this->assertInstanceOf(Update::class, $update);
+        $this->assertSame(
+            expected: [
+                'record_id' => '',
+                'op' => '',
+                'path' => null,
+                'value' => null,
+            ],
             actual: $update->toArray(),
         );
     }

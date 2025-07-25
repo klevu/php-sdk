@@ -67,7 +67,7 @@ class AttributeTest extends TestCase
             immutable: true,
             aliases: [
                 'test_attrib',
-            ]
+            ],
         );
 
         $this->assertSame('test_attribute', $attribute->getAttributeName());

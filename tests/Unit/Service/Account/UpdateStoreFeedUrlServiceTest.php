@@ -24,6 +24,7 @@ use Klevu\PhpSDK\Model\AccountCredentials;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\ComposableUserAgentProviderInterface;
 use Klevu\PhpSDK\Service\Account\UpdateStoreFeedUrlService;
+use Klevu\PhpSDK\Test\Unit\Provider\UserAgent\PhpSDKUserAgentProviderTest;
 use Klevu\PhpSDK\Validator\ValidatorInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Depends;
@@ -148,7 +149,7 @@ class UpdateStoreFeedUrlServiceTest extends TestCase
                 $this->assertIsArray($userAgentHeaders);
                 $this->assertCount(1, $userAgentHeaders);
                 $this->assertMatchesRegularExpression(
-                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                     string: $userAgentHeaders[0],
                 );
 
@@ -328,7 +329,7 @@ class UpdateStoreFeedUrlServiceTest extends TestCase
                             $this->assertIsArray($context['headers']['User-Agent']);
                             $this->assertCount(1, $context['headers']['User-Agent']);
                             $this->assertMatchesRegularExpression(
-                                pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                                pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                                 string: $context['headers']['User-Agent'][0],
                             );
 

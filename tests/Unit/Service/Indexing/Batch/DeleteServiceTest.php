@@ -30,6 +30,7 @@ use Klevu\PhpSDK\Provider\RequestBearerTokenProviderInterface;
 use Klevu\PhpSDK\Service\ApiServiceInterface;
 use Klevu\PhpSDK\Service\Indexing\Batch\DeleteService;
 use Klevu\PhpSDK\Service\Indexing\InvalidRecordMode;
+use Klevu\PhpSDK\Test\Unit\Provider\UserAgent\PhpSDKUserAgentProviderTest;
 use Klevu\PhpSDK\Validator\RequestBearerToken\RequestHeaders\ApiKeyValidator;
 use Klevu\PhpSDK\Validator\RequestBearerToken\RequestHeaders\AuthAlgorithmValidator;
 use Klevu\PhpSDK\Validator\RequestBearerToken\RequestHeaders\ContentTypeValidator;
@@ -345,7 +346,7 @@ class DeleteServiceTest extends TestCase
                 $this->assertIsArray($userAgentHeaders);
                 $this->assertCount(1, $userAgentHeaders);
                 $this->assertMatchesRegularExpression(
-                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                     string: $userAgentHeaders[0],
                 );
 
@@ -450,7 +451,7 @@ class DeleteServiceTest extends TestCase
                 $this->assertIsArray($userAgentHeaders);
                 $this->assertCount(1, $userAgentHeaders);
                 $this->assertMatchesRegularExpression(
-                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                     string: $userAgentHeaders[0],
                 );
 
@@ -661,7 +662,7 @@ class DeleteServiceTest extends TestCase
                             $this->assertIsArray($context['headers']['User-Agent']);
                             $this->assertCount(1, $context['headers']['User-Agent']);
                             $this->assertMatchesRegularExpression(
-                                pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                                pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                                 string: $context['headers']['User-Agent'][0],
                             );
 
@@ -1304,7 +1305,6 @@ class DeleteServiceTest extends TestCase
         }
     }
 
-
     #[Test]
     #[TestWith(['500 Internal Server Error'])]
     public function testSend_InvalidResponse(
@@ -1449,7 +1449,7 @@ class DeleteServiceTest extends TestCase
                 $this->assertIsArray($userAgentHeaders);
                 $this->assertCount(1, $userAgentHeaders);
                 $this->assertMatchesRegularExpression(
-                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                     string: $userAgentHeaders[0],
                 );
 
@@ -1670,7 +1670,7 @@ class DeleteServiceTest extends TestCase
                             $this->assertIsArray($context['headers']['User-Agent']);
                             $this->assertCount(1, $context['headers']['User-Agent']);
                             $this->assertMatchesRegularExpression(
-                                pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                                pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                                 string: $context['headers']['User-Agent'][0],
                             );
 

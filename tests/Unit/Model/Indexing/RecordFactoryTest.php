@@ -68,6 +68,28 @@ class RecordFactoryTest extends TestCase
                 ],
                 \TypeError::class,
             ],
+            [
+                [
+                    'id' => null,
+                    'type' => '',
+                    'relations' => [],
+                    'attributes' => [],
+                    'groups' => [],
+                    'channels' => [],
+                ],
+                \TypeError::class,
+            ],
+            [
+                [
+                    'id' => '',
+                    'type' => '',
+                    'relations' => [],
+                    'attributes' => null,
+                    'groups' => [],
+                    'channels' => [],
+                ],
+                \TypeError::class,
+            ],
         ];
     }
 
@@ -263,6 +285,33 @@ class RecordFactoryTest extends TestCase
         $this->assertInstanceOf(Record::class, $record);
         $this->assertSame(
             expected: $expectedResult,
+            actual: $record->toArray(),
+        );
+    }
+
+    #[Test]
+    public function testCreate_NullData(): void
+    {
+        $recordFactory = new RecordFactory();
+
+        $record = $recordFactory->create([
+            'id' => '',
+            'type' => null,
+            'relations' => null,
+            'attributes' => [],
+            'groups' => null,
+            'channels' => null,
+        ]);
+        $this->assertInstanceOf(Record::class, $record);
+        $this->assertSame(
+            expected: [
+                'id' => '',
+                'type' => '',
+                'relations' => null,
+                'attributes' => [],
+                'groups' => null,
+                'channels' => null,
+            ],
             actual: $record->toArray(),
         );
     }

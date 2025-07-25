@@ -21,6 +21,7 @@ use Klevu\PhpSDK\Model\Analytics\Collect\UserProfile;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\ComposableUserAgentProviderInterface;
 use Klevu\PhpSDK\Service\Analytics\CollectService;
+use Klevu\PhpSDK\Test\Unit\Provider\UserAgent\PhpSDKUserAgentProviderTest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -373,7 +374,7 @@ class CollectServiceTest extends TestCase
                 $this->assertIsArray($userAgentHeaders);
                 $this->assertCount(1, $userAgentHeaders);
                 $this->assertMatchesRegularExpression(
-                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                     string: $userAgentHeaders[0],
                 );
 
@@ -498,7 +499,7 @@ class CollectServiceTest extends TestCase
                             $this->assertIsArray($context['headers']['User-Agent']);
                             $this->assertCount(1, $context['headers']['User-Agent']);
                             $this->assertMatchesRegularExpression(
-                                pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                                pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                                 string: $context['headers']['User-Agent'][0],
                             );
                             break;
