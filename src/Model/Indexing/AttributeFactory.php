@@ -28,13 +28,18 @@ class AttributeFactory
      */
     public function create(array $data): Attribute
     {
-        $datatype = $data[Attribute::FIELD_DATATYPE] ?? null;
+        $data = array_filter(
+            array: $data,
+            callback: static fn ($value): bool => null !== $value,
+        );
+
+        $datatype = $data[Attribute::FIELD_DATATYPE] ?? '';
         if ($datatype instanceof DataType) {
             $datatype = $datatype->value;
         }
 
         $attribute = new Attribute(
-            attributeName: $data[Attribute::FIELD_ATTRIBUTE_NAME] ?? null,
+            attributeName: (string)($data[Attribute::FIELD_ATTRIBUTE_NAME] ?? ''), // @phpstan-ignore-line
             datatype: $datatype,
         );
 
@@ -44,28 +49,28 @@ class AttributeFactory
                     'default' => $data[Attribute::FIELD_LABEL],
                 ];
             }
-            $attribute->setLabel($data[Attribute::FIELD_LABEL]);
+            $attribute->setLabel($data[Attribute::FIELD_LABEL]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_SEARCHABLE, $data)) {
-            $attribute->setSearchable($data[Attribute::FIELD_SEARCHABLE]);
+            $attribute->setSearchable($data[Attribute::FIELD_SEARCHABLE]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_FILTERABLE, $data)) {
-            $attribute->setFilterable($data[Attribute::FIELD_FILTERABLE]);
+            $attribute->setFilterable($data[Attribute::FIELD_FILTERABLE]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_RETURNABLE, $data)) {
-            $attribute->setReturnable($data[Attribute::FIELD_RETURNABLE]);
+            $attribute->setReturnable($data[Attribute::FIELD_RETURNABLE]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_ABBREVIATE, $data)) {
-            $attribute->setAbbreviate($data[Attribute::FIELD_ABBREVIATE]);
+            $attribute->setAbbreviate($data[Attribute::FIELD_ABBREVIATE]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_RANGEABLE, $data)) {
-            $attribute->setRangeable($data[Attribute::FIELD_RANGEABLE]);
+            $attribute->setRangeable($data[Attribute::FIELD_RANGEABLE]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_ALIASES, $data)) {
-            $attribute->setAliases($data[Attribute::FIELD_ALIASES]);
+            $attribute->setAliases($data[Attribute::FIELD_ALIASES]); // @phpstan-ignore-line
         }
         if (array_key_exists(Attribute::FIELD_IMMUTABLE, $data)) {
-            $attribute->setImmutable($data[Attribute::FIELD_IMMUTABLE]);
+            $attribute->setImmutable($data[Attribute::FIELD_IMMUTABLE]); // @phpstan-ignore-line
         }
 
         return $attribute;

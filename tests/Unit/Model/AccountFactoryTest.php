@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Klevu\PhpSDK\Test\Unit\Model;
 
+use Klevu\PhpSDK\Model\Account;
 use Klevu\PhpSDK\Model\AccountFactory;
 use Klevu\PhpSDK\Model\Platforms;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -127,5 +128,48 @@ class AccountFactoryTest extends TestCase
         $this->assertSame('CAD', $account->getDefaultCurrency());
         $this->assertFalse($account->getAccountFeatures()->smartCategoryMerchandising);
         $this->assertFalse($account->getAccountFeatures()->smartRecommendations);
+    }
+
+    #[Test]
+    public function testCreate_NullData(): void
+    {
+        $accountFactory = new AccountFactory();
+        $account = $accountFactory->create([
+            'jsApiKey' => null,
+            'restAuthKey' => null,
+            'platform' => null,
+            'active' => null,
+            'companyName' => null,
+            'email' => null,
+            'indexingUrl' => null,
+            'searchUrl' => null,
+            'smartCategoryMerchandisingUrl' => null,
+            'analyticsUrl' => null,
+            'jsUrl' => null,
+            'tiersUrl' => null,
+            'indexingVersion' => null,
+            'defaultCurrency' => null,
+        ]);
+        $this->assertInstanceOf(Account::class, $account);
+
+        $this->assertSame(
+            expected: [
+                'jsApiKey' => null,
+                'restAuthKey' => null,
+                'platform' => null,
+                'active' => false,
+                'companyName' => null,
+                'email' => null,
+                'indexingUrl' => null,
+                'searchUrl' => null,
+                'smartCategoryMerchandisingUrl' => null,
+                'analyticsUrl' => null,
+                'jsUrl' => null,
+                'tiersUrl' => null,
+                'indexingVersion' => '',
+                'defaultCurrency' => '',
+            ],
+            actual: $account->toArray(),
+        );
     }
 }

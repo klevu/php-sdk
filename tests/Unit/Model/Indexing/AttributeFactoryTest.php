@@ -26,17 +26,6 @@ class AttributeFactoryTest extends TestCase
     {
         return [
             [
-                [],
-                \TypeError::class,
-            ],
-            [
-                [
-                    'id' => 'test_attribute',
-                    'datatype' => 'STRING',
-                ],
-                \TypeError::class,
-            ],
-            [
                 [
                     'attributeName' => 'test_attribute',
                     'datatype' => 'STRING',
@@ -308,6 +297,42 @@ class AttributeFactoryTest extends TestCase
         $this->assertInstanceOf(Attribute::class, $attribute);
         $this->assertSame(
             expected: $expectedResult,
+            actual: $attribute->toArray(),
+        );
+    }
+
+    #[Test]
+    public function testCreate_NullData(): void
+    {
+        $attributeFactory = new AttributeFactory();
+
+        $attribute = $attributeFactory->create([
+            'attributeName' => null,
+            'datatype' => null,
+            'label' => null,
+            'searchable' => null,
+            'filterable' => null,
+            'returnable' => null,
+            'abbreviate' => null,
+            'rangeable' => null,
+            'aliases' => null,
+            'immutable' => null,
+        ]);
+        $this->assertInstanceOf(Attribute::class, $attribute);
+
+        $this->assertSame(
+            expected: [
+                'attributeName' => '',
+                'datatype' => '',
+                'label' => [],
+                'searchable' => true,
+                'filterable' => true,
+                'returnable' => true,
+                'abbreviate' => false,
+                'rangeable' => false,
+                'aliases' => [],
+                'immutable' => false,
+            ],
             actual: $attribute->toArray(),
         );
     }

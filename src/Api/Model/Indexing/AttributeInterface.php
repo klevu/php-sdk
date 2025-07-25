@@ -79,7 +79,7 @@ interface AttributeInterface
 
     /**
      * Whether this (numeric) attribute can be used to create a range filter
-     * 
+     *
      * @return bool
      */
     public function isRangeable(): bool;

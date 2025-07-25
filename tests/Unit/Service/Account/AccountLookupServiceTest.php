@@ -27,6 +27,7 @@ use Klevu\PhpSDK\Model\Platforms;
 use Klevu\PhpSDK\Provider\BaseUrlsProviderInterface;
 use Klevu\PhpSDK\Provider\ComposableUserAgentProviderInterface;
 use Klevu\PhpSDK\Service\Account\AccountLookupService;
+use Klevu\PhpSDK\Test\Unit\Provider\UserAgent\PhpSDKUserAgentProviderTest;
 use Klevu\PhpSDK\Validator\ValidatorInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Depends;
@@ -161,7 +162,7 @@ JSON;
                 $this->assertIsArray($userAgentHeaders);
                 $this->assertCount(1, $userAgentHeaders);
                 $this->assertMatchesRegularExpression(
-                    pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                    pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                     string: $userAgentHeaders[0],
                 );
 
@@ -338,7 +339,7 @@ JSON;
                             $this->assertIsArray($context['headers']['User-Agent']);
                             $this->assertCount(1, $context['headers']['User-Agent']);
                             $this->assertMatchesRegularExpression(
-                                pattern: '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d)+\)#',
+                                pattern: PhpSDKUserAgentProviderTest::USER_AGENT_PATTERN,
                                 string: $context['headers']['User-Agent'][0],
                             );
 

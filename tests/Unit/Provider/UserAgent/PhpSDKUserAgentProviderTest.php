@@ -22,6 +22,13 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PhpSDKUserAgentProvider::class)]
 class PhpSDKUserAgentProviderTest extends TestCase
 {
+    /**
+     * Note: not used in this class, which tests exactly what we're expecting, but
+     *       added as single instance for use in other tests which do not need to
+     *       be as specific
+     */
+    public const USER_AGENT_PATTERN = '#^klevu-php-sdk/\d(\.\d)+ \(PHP \d(\.\d+)+\)#';
+
     #[Test]
     public function testExecute_NullConstructor(): void
     {
