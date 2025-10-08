@@ -54,7 +54,7 @@ interface BaseUrlsProviderInterface
      *
      * @note Contains route prefix where applicable based upon version value passed
      *
-     * @example indexing.ksearchnet.com/v2
+     * @example indexing-api.ksearchnet.com/v2
      *
      * @param IndexingVersions $version
      *

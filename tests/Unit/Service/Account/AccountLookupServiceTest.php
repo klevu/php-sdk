@@ -131,7 +131,7 @@ class AccountLookupServiceTest extends TestCase
     "active": true,
     "companyName": "Klevu",
     "email": "contact@klevu.com",
-    "indexingUrl": "indexing.ksearchnet.com",
+    "indexingUrl": "indexing-api.ksearchnet.com",
     "searchUrl": "cs.ksearchnet.com",
     "catNavUrl": "cn.ksearchnet.com",
     "analyticsUrl": "stats.ksearchnet.com",
@@ -188,7 +188,7 @@ JSON;
         $this->assertTrue($account->isActive());
         $this->assertSame('Klevu', $account->getCompanyName());
         $this->assertSame('contact@klevu.com', $account->getEmail());
-        $this->assertSame('indexing.ksearchnet.com', $account->getIndexingUrl());
+        $this->assertSame('indexing-api.ksearchnet.com', $account->getIndexingUrl());
         $this->assertSame('cs.ksearchnet.com', $account->getSearchUrl());
         $this->assertSame('cn.ksearchnet.com', $account->getSmartCategoryMerchandisingUrl());
         $this->assertSame('stats.ksearchnet.com', $account->getAnalyticsUrl());
@@ -219,7 +219,7 @@ JSON;
     "active": true,
     "companyName": "Klevu",
     "email": "contact@klevu.com",
-    "indexingUrl": "indexing.ksearchnet.com",
+    "indexingUrl": "indexing-api.ksearchnet.com",
     "searchUrl": "cs.ksearchnet.com",
     "catNavUrl": "cn.ksearchnet.com",
     "analyticsUrl": "stats.ksearchnet.com",
@@ -275,7 +275,7 @@ JSON;
     "active": true,
     "companyName": "Klevu",
     "email": "contact@klevu.com",
-    "indexingUrl": "indexing.ksearchnet.com",
+    "indexingUrl": "indexing-api.ksearchnet.com",
     "searchUrl": "cs.ksearchnet.com",
     "catNavUrl": "cn.ksearchnet.com",
     "analyticsUrl": "stats.ksearchnet.com",

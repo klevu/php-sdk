@@ -132,7 +132,7 @@ interface AccountInterface
      *
      * Does not contain URL protocol
      *
-     * @example indexing.ksearchnet.com
+     * @example indexing-api.ksearchnet.com
      *
      * @return string|null
      */
@@ -143,7 +143,7 @@ interface AccountInterface
      *
      * Should not contain URL protocol
      *
-     * @example indexing.ksearchnet.com
+     * @example indexing-api.ksearchnet.com
      *
      * @param string|null $indexingUrl
      *

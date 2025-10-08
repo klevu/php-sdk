@@ -192,7 +192,7 @@ class BatchService implements BatchServiceInterface
     /**
      * Returns the full endpoint for requests made by this service class
      *
-     * @example https://indexing.ksearchnet.com/v2/batch
+     * @example https://indexing-api.ksearchnet.com/v2/batch
      * @uses BaseUrlsProviderInterface::getIndexingUrl
      * @return string
      * @throws \LogicException On internal errors encountered by the application, such as incorrectly

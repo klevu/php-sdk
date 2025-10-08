@@ -155,7 +155,7 @@ class DeleteService extends BatchService implements BatchDeleteServiceInterface
     /**
      * Returns the full endpoint for requests made by this service class
      *
-     * @example https://indexing.ksearchnet.com/v2/batch/delete
+     * @example https://indexing-api.ksearchnet.com/v2/batch/delete
      * @uses BaseUrlsProviderInterface::getIndexingUrl
      * @return string
      * @throws \LogicException

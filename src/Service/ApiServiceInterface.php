@@ -43,7 +43,7 @@ interface ApiServiceInterface
     /**
      * Returns the full endpoint for requests made by this service class
      *
-     * @example https://indexing.ksearchnet.com/attributes
+     * @example https://indexing-api.ksearchnet.com/attributes
      *
      * @return string
      * @throws \LogicException On internal errors encountered by the application, such as incorrectly
