@@ -227,8 +227,8 @@ class RequestBearerTokenProviderTest extends TestCase
     }
 
     #[Test]
-    #[TestWith(['PUT', 'https://indexing.ksearchnet.com/v2/batch?test=1', '{}'])]
-    #[TestWith(['GET', 'https://indexing.ksearchnet.com/v2/attributes', null])]
+    #[TestWith(['PUT', 'https://indexing-api.ksearchnet.com/v2/batch?test=1', '{}'])]
+    #[TestWith(['GET', 'https://indexing-api.ksearchnet.com/v2/attributes', null])]
     public function testGetForRequest_Valid(
         string $method,
         string $url,

@@ -63,7 +63,7 @@ class DeleteServiceTest extends TestCase
         $deleteService = new DeleteService();
 
         $this->assertSame(
-            expected: 'https://indexing.ksearchnet.com/v2/batch/delete',
+            expected: 'https://indexing-api.ksearchnet.com/v2/batch/delete',
             actual: $deleteService->getEndpoint(),
         );
     }
@@ -335,11 +335,11 @@ class DeleteServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($records): bool {
                 $this->assertSame('PUT', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch/delete',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch/delete',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -440,11 +440,11 @@ class DeleteServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($records): bool {
                 $this->assertSame('PUT', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch/delete',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch/delete',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -653,7 +653,7 @@ class DeleteServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);
@@ -1438,11 +1438,11 @@ class DeleteServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($recordIds): bool {
                 $this->assertSame('PUT', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch/delete',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch/delete',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -1661,7 +1661,7 @@ class DeleteServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);

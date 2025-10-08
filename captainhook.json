@@ -26,7 +26,7 @@
             {
                 "action": "\\CaptainHook\\App\\Hook\\Branch\\Action\\EnsureNaming",
                 "options": {
-                    "regex": "#master|release|epic/ks-[0-9]+-[a-z0-9\\-]+|bugfix/ks-[0-9]+-[a-z0-9\\-]+|feature/ks-[0-9]+-[a-z0-9\\-]+|poc/ks-[0-9]+-[a-z0-9\\-]+#"
+                    "regex": "#master|release|rc/[0-9]\\.[0-9]+\\.[0-9]+|epic/ks-[0-9]+-[a-z0-9\\-]+|bugfix/ks-[0-9]+-[a-z0-9\\-]+|feature/ks-[0-9]+-[a-z0-9\\-]+|poc/ks-[0-9]+-[a-z0-9\\-]+#"
                 }
             }
         ]

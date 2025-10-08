@@ -65,7 +65,7 @@ class AttributesServiceTest extends TestCase
         $attributesService = new AttributesService();
 
         $this->assertSame(
-            expected: 'https://indexing.ksearchnet.com/v2/attributes',
+            expected: 'https://indexing-api.ksearchnet.com/v2/attributes',
             actual: $attributesService->getEndpoint(),
         );
     }
@@ -212,11 +212,11 @@ class AttributesServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request): bool {
                 $this->assertSame('GET', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/attributes',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/attributes',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
                 $userAgentHeaders = $request->getHeader('User-Agent');
                 $this->assertIsArray($userAgentHeaders);
@@ -413,7 +413,7 @@ class AttributesServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);
@@ -828,11 +828,11 @@ class AttributesServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request): bool {
                 $this->assertSame('GET', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/attributes',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/attributes',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
                 $userAgentHeaders = $request->getHeader('User-Agent');
                 $this->assertIsArray($userAgentHeaders);
@@ -1019,7 +1019,7 @@ class AttributesServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);
@@ -1416,11 +1416,11 @@ class AttributesServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($attribute): bool {
                 $this->assertSame('PUT', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/attributes/' . $attribute->getAttributeName(),
+                    expected: 'https://indexing-api.ksearchnet.com/v2/attributes/' . $attribute->getAttributeName(),
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
                 $userAgentHeaders = $request->getHeader('User-Agent');
                 $this->assertIsArray($userAgentHeaders);
@@ -1617,7 +1617,7 @@ class AttributesServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);
@@ -2062,11 +2062,11 @@ class AttributesServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($attribute): bool {
                 $this->assertSame('DELETE', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/attributes/' . $attribute->getAttributeName(),
+                    expected: 'https://indexing-api.ksearchnet.com/v2/attributes/' . $attribute->getAttributeName(),
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -2258,7 +2258,7 @@ class AttributesServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);
@@ -2634,11 +2634,11 @@ class AttributesServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($attribute): bool {
                 $this->assertSame('DELETE', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/attributes/' . $attribute->getAttributeName(),
+                    expected: 'https://indexing-api.ksearchnet.com/v2/attributes/' . $attribute->getAttributeName(),
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -2830,7 +2830,7 @@ class AttributesServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);

@@ -65,7 +65,7 @@ class BatchServiceTest extends TestCase
         $batchService = new BatchService();
 
         $this->assertSame(
-            expected: 'https://indexing.ksearchnet.com/v2/batch',
+            expected: 'https://indexing-api.ksearchnet.com/v2/batch',
             actual: $batchService->getEndpoint(),
         );
     }
@@ -430,11 +430,11 @@ class BatchServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($records): bool {
                 $this->assertSame('PUT', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -535,11 +535,11 @@ class BatchServiceTest extends TestCase
             ->with($this->callback(function (RequestInterface $request) use ($records): bool {
                 $this->assertSame('PUT', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -747,7 +747,7 @@ class BatchServiceTest extends TestCase
                             $this->assertIsArray($context['headers']);
 
                             $this->assertArrayHasKey('Host', $context['headers']);
-                            $this->assertSame(['indexing.ksearchnet.com'], $context['headers']['Host']);
+                            $this->assertSame(['indexing-api.ksearchnet.com'], $context['headers']['Host']);
 
                             $this->assertArrayHasKey('Content-Type', $context['headers']);
                             $this->assertSame(['application/json'], $context['headers']['Content-Type']);
@@ -1762,11 +1762,11 @@ class BatchServiceTest extends TestCase
 
                 $this->assertSame('PATCH', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');
@@ -1865,11 +1865,11 @@ class BatchServiceTest extends TestCase
 
                 $this->assertSame('PATCH', $request->getMethod());
                 $this->assertSame(
-                    expected: 'https://indexing.ksearchnet.com/v2/batch',
+                    expected: 'https://indexing-api.ksearchnet.com/v2/batch',
                     actual: (string)$request->getUri(),
                 );
 
-                $this->assertSame(['indexing.ksearchnet.com'], $request->getHeader('Host'));
+                $this->assertSame(['indexing-api.ksearchnet.com'], $request->getHeader('Host'));
                 $this->assertSame(['application/json'], $request->getHeader('Content-Type'));
 
                 $userAgentHeaders = $request->getHeader('User-Agent');

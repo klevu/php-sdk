@@ -81,7 +81,7 @@ class BaseUrlsProviderTest extends TestCase
         $baseUrlsProvider = new BaseUrlsProvider();
 
         $this->assertSame(
-            expected: 'indexing.ksearchnet.com',
+            expected: 'indexing-api.ksearchnet.com',
             actual: $baseUrlsProvider->getIndexingUrl(),
         );
     }
@@ -92,7 +92,7 @@ class BaseUrlsProviderTest extends TestCase
         $baseUrlsProvider = new BaseUrlsProvider();
 
         $this->assertSame(
-            expected: 'indexing.ksearchnet.com/v2',
+            expected: 'indexing-api.ksearchnet.com/v2',
             actual: $baseUrlsProvider->getIndexingUrl(IndexingVersions::JSON),
         );
     }
@@ -234,11 +234,11 @@ class BaseUrlsProviderTest extends TestCase
             actual: $baseUrlsProvider->getSmartCategoryMerchandisingUrl(),
         );
         $this->assertSame(
-            expected: 'indexing.ksearchnet.com',
+            expected: 'indexing-api.ksearchnet.com',
             actual: $baseUrlsProvider->getIndexingUrl(),
         );
         $this->assertSame(
-            expected: 'indexing.ksearchnet.com/v2',
+            expected: 'indexing-api.ksearchnet.com/v2',
             actual: $baseUrlsProvider->getIndexingUrl(IndexingVersions::JSON),
         );
         $this->assertSame(
@@ -269,11 +269,11 @@ class BaseUrlsProviderTest extends TestCase
             actual: $baseUrlsProvider->getSmartCategoryMerchandisingUrl(),
         );
         $this->assertSame(
-            expected: 'indexing.ksearchnet.com',
+            expected: 'indexing-api.ksearchnet.com',
             actual: $baseUrlsProvider->getIndexingUrl(),
         );
         $this->assertSame(
-            expected: 'indexing.ksearchnet.com/v2',
+            expected: 'indexing-api.ksearchnet.com/v2',
             actual: $baseUrlsProvider->getIndexingUrl(IndexingVersions::JSON),
         );
         $this->assertSame(

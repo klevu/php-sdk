@@ -115,8 +115,8 @@ class AccountTest extends TestCase
 
         $this->assertNull($account->getIndexingUrl());
 
-        $account->setIndexingUrl('indexing.ksearchnet.com');
-        $this->assertSame('indexing.ksearchnet.com', $account->getIndexingUrl());
+        $account->setIndexingUrl('indexing-api.ksearchnet.com');
+        $this->assertSame('indexing-api.ksearchnet.com', $account->getIndexingUrl());
 
         $account->setIndexingUrl(null);
         $this->assertNull($account->getIndexingUrl());
@@ -249,7 +249,7 @@ class AccountTest extends TestCase
         $account->setActive(true);
         $account->setCompanyName('Klevu');
         $account->setEmail('contact@klevu.com');
-        $account->setIndexingUrl('indexing.ksearchnet.com');
+        $account->setIndexingUrl('indexing-api.ksearchnet.com');
         $account->setSearchUrl('cs.ksearchnet.com');
         $account->setSmartCategoryMerchandisingUrl('cn.ksearchnet.com');
         $account->setAnalyticsUrl('stats.ksearchnet.com');
@@ -272,7 +272,7 @@ class AccountTest extends TestCase
             'active' => true,
             'companyName' => 'Klevu',
             'email' => 'contact@klevu.com',
-            'indexingUrl' => 'indexing.ksearchnet.com',
+            'indexingUrl' => 'indexing-api.ksearchnet.com',
             'searchUrl' => 'cs.ksearchnet.com',
             'smartCategoryMerchandisingUrl' => 'cn.ksearchnet.com',
             'analyticsUrl' => 'stats.ksearchnet.com',

@@ -37,7 +37,7 @@ class BaseUrlsProvider implements BaseUrlsProviderInterface
     /**
      * @var string
      */
-    private string $indexingUrl = 'indexing.ksearchnet.com';
+    private string $indexingUrl = 'indexing-api.ksearchnet.com';
     /**
      * @var string
      */
@@ -112,7 +112,7 @@ class BaseUrlsProvider implements BaseUrlsProviderInterface
     }
 
     /**
-     * @example indexing.ksearchnet.com/v2
+     * @example indexing-api.ksearchnet.com/v2
      * @uses IndexingVersions::getUrlRoutePrefix()
      *
      * @param IndexingVersions $version

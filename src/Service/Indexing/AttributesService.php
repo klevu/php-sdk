@@ -168,7 +168,7 @@ class AttributesService implements AttributesServiceInterface
     /**
      * Returns the full endpoint for requests made by this service class
      *
-     * @example https://indexing.ksearchnet.com/v2/analytics
+     * @example https://indexing-api.ksearchnet.com/v2/analytics
      * @uses BaseUrlsProviderInterface::getIndexingUrl
      * @return string
      * @throws \LogicException On internal errors encountered by the application, such as incorrectly
