@@ -53,7 +53,12 @@ class EventIterator implements IteratorInterface
      */
     public function current(): ?Event
     {
-        return $this->data[$this->key()] ?? null;
+        $key = $this->key();
+        if (null === $key) {
+            return null;
+        }
+
+        return $this->data[$key] ?? null;
     }
 
     /**
@@ -64,6 +69,9 @@ class EventIterator implements IteratorInterface
      */
     public function valid(): bool
     {
-        return ($this->data[$this->key()] ?? null) instanceof Event;
+        $key = $this->key();
+
+        return null !== $key
+            && ($this->data[$key] ?? null) instanceof Event;
     }
 }
