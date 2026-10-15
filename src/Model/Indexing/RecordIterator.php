@@ -54,7 +54,12 @@ class RecordIterator implements IteratorInterface
      */
     public function current(): ?RecordInterface
     {
-        return $this->data[$this->key()] ?? null;
+        $key = $this->key();
+        if (null === $key) {
+            return null;
+        }
+
+        return $this->data[$key] ?? null;
     }
 
     /**
@@ -65,6 +70,9 @@ class RecordIterator implements IteratorInterface
      */
     public function valid(): bool
     {
-        return ($this->data[$this->key()] ?? null) instanceof RecordInterface;
+        $key = $this->key();
+
+        return null !== $key
+            && ($this->data[$key] ?? null) instanceof RecordInterface;
     }
 }

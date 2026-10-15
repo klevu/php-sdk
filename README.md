@@ -16,7 +16,7 @@ composer require klevu/php-sdk
 
 ## System Requirements
 
-To use this library, you must be running **PHP 8.1** compiled with the `libxml` and `simplexml` extensions. 
+To use this library, you must be running **PHP 8.1, 8.2, 8.3, 8.4 or 8.5** compiled with the `libxml` and `simplexml` extensions. 
 See the [PHP docs](https://www.php.net/manual/en/simplexml.installation.php) for more information.
 
 You will also require a [PSR-18 compatible](https://www.php-fig.org/psr/psr-18/) HTTP client, such as `guzzlehttp/guzzle`,
